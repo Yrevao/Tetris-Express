@@ -1,5 +1,5 @@
 // used to store grids for i, j, l, o, s, t, z blocks with 4 rotations hardcoded, also provides id to color/letter arrays
-import * as utils from './utilityTetris.js';
+import * as utils from './utility.js';
 
 export const i = (rot) => {
     let block = utils.newGrid(4, 4);

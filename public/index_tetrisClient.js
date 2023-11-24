@@ -1,7 +1,7 @@
 const { io } = require("socket.io-client");
 const socket = io(window.location.origin);
-import * as tetris from './modelTetris.js';
-import staticStyle from './style/style.css';
+import * as tetris from './tetrisClient/model.js';
+import staticStyle from './style/staticStyle.css';
 
 const init = () => {
     let body = document.getElementsByTagName("body")[0];
@@ -15,7 +15,7 @@ const init = () => {
     body.appendChild(board);
 
     // give socketIO time to connect before rendering anything
-        socket.on('connect', () => {
+    socket.on('connect', () => {
         tetris.blockFall();
     });
 };

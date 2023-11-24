@@ -1,18 +1,12 @@
 const webpack = require('webpack');
 const path = require('path');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
-    entry: './public/index.js',
+    entry: './public/index_tetrisClient.js',
     mode: 'development',
-    plugins: [
-      new HtmlWebpackPlugin({
-        title: 'Tetris Website Placeholder Title',
-      }),
-    ],
     output: {
       path: path.resolve(__dirname, 'dist/'),
-      filename: 'bundle.js',
+      filename: 'bundle_tetrisClient.js',
       clean: true
     },
     module: {

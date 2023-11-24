@@ -1,5 +1,5 @@
-import * as utils from './utilityTetris.js';
-import * as draw from './drawTetris.js';
+import * as utils from './utility.js';
+import * as draw from './draw.js';
 import * as blockStore from './blockStore.js';
 
 // board dimensions
