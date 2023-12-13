@@ -1,11 +1,12 @@
-import * as utils from './utility.js';
-import * as draw from './draw.js';
-import * as blockStore from './blockStore.js';
+const utils = require('./utility.js');
+const draw = require('./draw.js');
+const blockStore = require('./blockStore.js');
 
-// board dimensions
+// board details
 const maxX = 10;
 const maxY = 40;
 const viewHeight = 20; // height the player actually sees
+let boardCanvas = null;
 
 // game state verified with the server
 let state = {
@@ -17,17 +18,6 @@ let state = {
     playX: 5,
     playY: 15,
     playRot: 0
-}
-
-// draw the board
-const drawBoard = () => {
-    for(let x = 0; x < draw.playfieldSizeX; x++) {
-        for(let y = 0; y < draw.playfieldSizeY; y++) {
-            let theBlock = state.board[x][y + (maxY - draw.playfieldSizeY)];
-            if(theBlock != null)
-                draw.drawBlock(x, y, theBlock.color);
-        }
-    }
 }
 
 // get the current piece's grid
@@ -69,8 +59,15 @@ const doGravity = () => {
 export const blockFall = () => {
     setTimeout(() => {
         doGravity();
-        draw.cls();
-        drawBoard();
+        draw.cls(boardCanvas);
+        draw.drawBoard(state.board, maxY, boardCanvas);
         blockFall();
     }, 100);
+}
+
+// entry point for index
+export const startClient = (playfieldCanvas) => {
+    boardCanvas = playfieldCanvas;
+
+    blockFall()
 }
