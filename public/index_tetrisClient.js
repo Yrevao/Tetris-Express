@@ -1,7 +1,7 @@
+const staticStyle = require('./style/staticStyle.css');
 const { io } = require("socket.io-client");
 const socket = io(window.location.origin);
-const staticStyle = require('./style/staticStyle.css');
-const model = require('./tetrisClient/model.js');
+const control = require('./tetrisClient/control.js');
 const draw = require('./tetrisClient/draw.js');
 
 window.onload = () => {

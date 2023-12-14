@@ -1,11 +1,5 @@
-const resetGame = () => {
+const model = require('./model.js');
 
-}
-
-const startGame = () => {
-
-}
-
-const pauseGame = () => {
-
+export const setup = () => {
+    
 }
