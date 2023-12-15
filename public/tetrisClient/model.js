@@ -1,15 +1,13 @@
 const utils = require('./utility.js');
-const draw = require('./draw.js');
 const blockStore = require('./blockStore.js');
 
 // board details
 const maxX = 10;
 const maxY = 40;
-const viewHeight = 20; // height the player actually sees
 let boardCanvas = null;
 
 // game state verified with the server
-let state = {
+export let state = {
     board: utils.newGrid(maxX, maxY),
     bagA: [1],
     bagB: [],
@@ -18,6 +16,25 @@ let state = {
     playX: 5,
     playY: 15,
     playRot: 0
+}
+
+// init and setup game
+export const init = (canvas) => {
+    boardCanvas = canvas;
+}
+
+// run one update cycle
+export const tick = () => {
+    doGravity();
+}
+
+// return canvas and state info for updating the displayed game board
+export const getGameView = () => {
+    return {
+        board: state.board,
+        maxY: maxY,
+        canvas: boardCanvas
+    }
 }
 
 // get the current piece's grid
@@ -53,21 +70,4 @@ const doGravity = () => {
         utils.stamp(state.playX, state.playY, state.board, getPiece());
         clearPlay(true);
     }
-}
-
-// testing code
-export const blockFall = () => {
-    setTimeout(() => {
-        doGravity();
-        draw.cls(boardCanvas);
-        draw.drawBoard(state.board, maxY, boardCanvas);
-        blockFall();
-    }, 100);
-}
-
-// entry point for index
-export const startClient = (playfieldCanvas) => {
-    boardCanvas = playfieldCanvas;
-
-    blockFall()
 }
