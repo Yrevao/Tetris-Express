@@ -8,6 +8,15 @@ export const setup = (playfieldCanvas) => {
     tickLoop();
 }
 
+// keystoke capture
+document.addEventListener('keydown', (event) => {
+    model.move(event.key, true);
+});
+
+document.addEventListener('keyup', (event) => {
+    model.move(event.key, false);
+});
+
 // gameplay loop
 const tickLoop = () => {
     setTimeout(() => {
@@ -15,7 +24,7 @@ const tickLoop = () => {
         updateCanvases([model.getGameView()]);
 
         tickLoop();
-    }, 100);
+    }, 500);
 }
 
 // update the contents of all the canvases in the passed array
