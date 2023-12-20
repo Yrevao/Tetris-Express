@@ -60,11 +60,11 @@ export const checkBoxColl = (x, y, base, input) => {
         for(let i = x; i < x + input.length; i++) {
 
             for(let j = y; j < y + input[0].length; j++) {
-                let checkBase = base[i][j]
-                let checkInput = input[i-x][j-y]
-                
+                let checkInput = input[i-x][j-y];
+
                 // check in the bounds of the base
                 if(i < base.length && j < base[0].length && i >= 0 && j >= 0) {
+                    let checkBase = base[i][j];
 
                     // if there's nothing to hit then go to the next index
                     if(checkBase == null || checkInput == null)
@@ -75,11 +75,8 @@ export const checkBoxColl = (x, y, base, input) => {
                         return true;
                 }
                 // check if the input part that's out of bounds is empty
-                else if(i-x >= 0 && j-y >= 0) {
-
-                    if(checkInput != null) 
-                        return true;
-                }
+                else if(i-x >= 0 && j-y >= 0 && checkInput != null)
+                    return true;
             }
         }
         return false;

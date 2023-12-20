@@ -1,7 +1,7 @@
 const utils = require('./utility.js');
 const blockStore = require('./blockStore.js');
 
-// board details
+// board grid details
 const maxX = 10;
 const maxY = 40;
 let boardCanvas = null;
@@ -9,21 +9,29 @@ let boardCanvas = null;
 // key buffer, stores key: { current down state, presses to execute, milliseconds down }
 let keyBuffer = {};
 
-// how long to hold a key before repeat presses; how fast to repeat press
-let rolloverMs = 1000;
-let rolloverSpeed = 100;
+// settings verified with the server
+export let settings = {
+    rolloverMs: 167,        // how long to hold a key before repeat inputs
+    rolloverSpeed: 33,      // how fast to repeat inputs
+    gravityTime: 1000,      // how long the piece in play takes to move down one cell
+    lockDelay: 500          // how long a piece takes to lock after landing in ms
+}
 
 // game state verified with the server
 export let state = {
-    board: utils.newGrid(maxX, maxY),
-    bagA: [1],
-    bagB: [],
-    bagPos: 0,
-    hold: null,
-    playX: 5,
-    playY: 15,
-    playRot: 0
+    board: utils.newGrid(maxX, maxY),   // game board grid
+    bagA: [1],                          // main piece bag
+    bagB: [],                           // buffer piece bag
+    bagPos: 0,                          // current position in bag
+    hold: null,                         // held piece
+    playX: 5,                           // x position of piece in play
+    playY: 20,                          // y position
+    playRot: 0,                         // rotation
 }
+
+// game state not verified with the server
+let playLandTime = -1;      // Date.now() of when the piece in play landed 
+let playLastGravity = -1;   // Date.now() of when the piece in play last moved down a cell
 
 // init and setup game
 export const init = (canvas) => {
@@ -39,13 +47,30 @@ export const init = (canvas) => {
             presses: 0
         }
     }
+
+    playLastGravity = Date.now();
 }
 
 // run one update cycle
 export const tick = () => {
+    // do keystroke actions
+    checkKeys();
+
     // update board
     doGravity();
+}
 
+// return canvas and state info for updating the displayed game board
+export const getGameView = () => {
+    return {
+        board: state.board,
+        maxY: maxY,
+        canvas: boardCanvas
+    }
+}
+
+// check keystroke buffer
+const checkKeys = () => {
     // check keystrokes
     for(let k in keyBuffer) {
         // get state and function for key
@@ -60,14 +85,14 @@ export const tick = () => {
             const msIdle = Date.now() - keyState.lastAction;
 
             // do something if the key has been held down long enough
-            if(msDown >= rolloverMs && !keyState.rollover) {
+            if(msDown >= settings.rolloverMs && !keyState.rollover) {
                 keyState.rollover = true;
                 keyState.lastAction = Date.now();
                 keyState.presses++;
             }
-            else if(msIdle >= rolloverSpeed && keyState.rollover) {
+            else if(msIdle >= settings.rolloverSpeed && keyState.rollover) {
                 // calculate how many rollovers have happened since the last tick
-                const rolloverActions = Math.floor(msIdle / rolloverSpeed);
+                const rolloverActions = Math.floor(msIdle / settings.rolloverSpeed);
 
                 keyState.lastAction = Date.now();
                 keyState.presses = rolloverActions;
@@ -83,17 +108,8 @@ export const tick = () => {
     }
 }
 
-// return canvas and state info for updating the displayed game board
-export const getGameView = () => {
-    return {
-        board: state.board,
-        maxY: maxY,
-        canvas: boardCanvas
-    }
-}
-
 // set the current user input
-export const move = (key, down) => {
+export const keyAction = (key, down) => {
     // only set key if it's down, mapped to something, and has not been held
     if(down && Object.getOwnPropertyNames(keyMap).includes(key) && keyBuffer[key].whenDown == -1) {
         keyBuffer[key].down = true;
@@ -111,7 +127,7 @@ export const move = (key, down) => {
 }
 
 // keys to controls
-export const keyMap = {
+export let keyMap = {
     'ArrowUp': 'rotcw',
     'ArrowLeft': 'left',
     'ArrowRight': 'right',
@@ -120,13 +136,13 @@ export const keyMap = {
 // controls to functions
 const controlMap = {
     'rotcw': () => {
-        
+        move(0, 1);
     },
     'left': () => {
-        
+        move(-1, 0);
     },
     'right': () => {
-        
+        move(1, 0);
     },
     'fastdrop': () => {
         
@@ -134,7 +150,10 @@ const controlMap = {
 }
 
 // get the current piece's grid
-const getPiece = () => {
+const getPiece = (rot) => {
+    if(rot != null)
+        return blockStore.idToLetter[state.bagA[state.bagPos]](rot);
+
     return blockStore.idToLetter[state.bagA[state.bagPos]](state.playRot);
 }
 
@@ -158,12 +177,41 @@ const clearPlay = (lock) => {
 const doGravity = () => {
     clearPlay(false);
 
-    if(!utils.checkBoxColl(state.playX, state.playY + 1, state.board, getPiece())) {
-        state.playY += 1;
-        utils.stamp(state.playX, state.playY, state.board, getPiece());
+    // how far to move a piece
+    let gravityDebt = Math.floor((Date.now() - playLastGravity) / settings.gravityTime);
+
+    // check if enought time has passed to move the piece down
+    if(gravityDebt >= 1) {
+        // check if piece can drop without collision
+        if(!utils.checkBoxColl(state.playX, state.playY + gravityDebt, state.board, getPiece())) {
+            playLastGravity = Date.now();
+            state.playY += gravityDebt;
+        }
+        // if the piece has landed then check for how long
+        else {
+            if(playLandTime < 0)
+                playLandTime = Date.now()
+            else if((Date.now() - playLandTime) >= settings.lockDelay)
+                clearPlay(true);
+        }
     }
-    else {
-        utils.stamp(state.playX, state.playY, state.board, getPiece());
-        clearPlay(true);
-    }
+
+    utils.stamp(state.playX, state.playY, state.board, getPiece());
+}
+
+// move or rotate a piece
+const move = (dx, drot) => {
+    // update piece position values
+    let newX = state.playX + dx;
+    let newRot = state.playRot + drot;
+
+    // clamp rotation
+    newRot = newRot % 4;
+
+    // update state with new values if theres no colision
+    if(!utils.checkBoxColl(state.playX, state.playY, state.board, getPiece(newRot)))
+        state.playRot = newRot;
+
+    if(!utils.checkBoxColl(newX, state.playY, state.board, getPiece()))
+        state.playX = newX;
 }

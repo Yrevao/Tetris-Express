@@ -17,7 +17,7 @@ export const newPlayfieldCanvas = (width, height, scale, canvasId, parentNode) =
     return playfield;
 }
 
-// draws a block on the 10x20 tetris board
+// draw block on tetris board
 export const drawBlock = (x, y, c, playfieldCanvas) => {
     let ctx = playfieldCanvas.getContext("2d");
     ctx.fillStyle = c;
