@@ -1,4 +1,4 @@
-const utils = require('./utility.js');
+const utils = require('./gameUtils.js');
 
 // viewport canvas dimensions
 export const playfieldSizeX = 10;

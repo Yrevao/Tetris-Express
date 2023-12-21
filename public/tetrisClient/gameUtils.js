@@ -1,3 +1,13 @@
+const draw = require('./draw.js');
+
+// update the contents of all the canvases in the passed array
+export const updateCanvases = (games) => {
+    games.forEach((game) => {
+        draw.cls(game.canvas);
+        draw.drawBoard(game.board, game.maxY, game.canvas);
+    })
+}
+
 // box factory
 export const newBox = (locked, color, effect) => {
     // color is css color

@@ -1,8 +1,9 @@
-const staticStyle = require('./style/staticStyle.css');
 const { io } = require("socket.io-client");
 const socket = io(window.location.origin);
-const control = require('./tetrisClient/control.js');
+const staticStyle = require('./style/staticStyle.css');
+const setup = require('./tetrisClient/setup.js');
 const draw = require('./tetrisClient/draw.js');
+const session = require('./tetrisClient/session.js');
 
 // generate HTML elements for tetris gameplay and start match setup
 window.onload = () => {
@@ -13,6 +14,8 @@ window.onload = () => {
 
     // give socketIO time to connect before rendering anything
     socket.on('connect', () => {
-        control.setup(mainBoard);
+        session.init(socket);
+
+        setup.start(session, mainBoard);
     });
 };

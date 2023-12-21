@@ -1,7 +1,7 @@
 // used to store grids for i, j, l, o, s, t, z blocks with 4 rotations hardcoded, also provides id to color/letter arrays
-const utils = require('./utility.js');
+const utils = require('./gameUtils.js');
 
-// super rotation system (srs) wall kick tables
+// super rotation system (SRS) wall kick tables
 const kickMatrix = {
     '01': [ [0,0],[-1,0],[-1,1],[0,-2],[-1,-2] ],
     '10': [	[0,0],[1,0],[1,-1],[0,2],[1,2] ],
