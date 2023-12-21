@@ -6,49 +6,46 @@ const maxX = 10;
 const maxY = 40;
 let boardCanvas = null;
 
-// key buffer, stores key: { current down state, presses to execute, milliseconds down }
-let keyBuffer = {};
-
-// settings verified with the server
+// gameplay settings
 export let settings = {
-    rolloverMs: 167,        // how long to hold a key before repeat inputs
-    rolloverSpeed: 33,      // how fast to repeat inputs
-    gravityTime: 1000,      // how long the piece in play takes to move down one cell
-    lockDelay: 500          // how long a piece takes to lock after landing in ms
+    rolloverMs: 167,            // how long to hold a key before repeat inputs
+    rolloverSpeed: 33,          // how fast to repeat inputs
+    gravityTime: 200,           // how long the piece in play takes to move down one cell in ms
+    levelGravity: 1000 / 5,     // fall speed of current level
+    softDropGravity: 1000 / 20, // fall speed of soft drop
+    lockDelay: 500              // how long a piece takes to lock after landing in ms
 }
 
-// game state verified with the server
+// game state
 export let state = {
     board: utils.newGrid(maxX, maxY),   // game board grid
-    bagA: [1],                          // main piece bag
-    bagB: [],                           // buffer piece bag
-    bagPos: 0,                          // current position in bag
+    bag: [0, 1, 2, 3, 4, 5, 6],         // main piece bag
     hold: null,                         // held piece
-    playX: 5,                           // x position of piece in play
-    playY: 20,                          // y position
+    playX: 3,                           // x position of piece in play
+    playY: 18,                          // y position
     playRot: 0,                         // rotation
+    playLandTime: -1,                   // Date.now() of when the piece in play landed 
+    playLastGravity: -1                 // Date.now() of when the piece in play last moved down a cell
 }
 
-// game state not verified with the server
-let playLandTime = -1;      // Date.now() of when the piece in play landed 
-let playLastGravity = -1;   // Date.now() of when the piece in play last moved down a cell
+// keystate object
+const newKeyState = (action, doRollover) => {
+    return {
+        action: action,
+        down: false,
+        rollover: false,
+        doRollover: doRollover,
+        whenDown: -1,
+        lastAction: -1,
+        presses: 0
+    }
+}
 
 // init and setup game
 export const init = (canvas) => {
     boardCanvas = canvas;
 
-    // initalize key buffer with key state objects
-    for(let k in keyMap) {
-        keyBuffer[k] = {
-            down: false,
-            rollover: false,
-            whenDown: -1,
-            lastAction: -1,
-            presses: 0
-        }
-    }
-
-    playLastGravity = Date.now();
+    state.playLastGravity = Date.now();
 }
 
 // run one update cycle
@@ -72,14 +69,14 @@ export const getGameView = () => {
 // check keystroke buffer
 const checkKeys = () => {
     // check keystrokes
-    for(let k in keyBuffer) {
+    for(let k in keyMap) {
         // get state and function for key
-        const keyState = keyBuffer[k];
-        const action = keyMap[k];
+        const keyState = keyMap[k];
+        const action = keyMap[k].action;
         const keyFunction = controlMap[action];
-        
+
         // check if key is held long enough for rollover
-        if(keyState.down) {
+        if(keyState.doRollover && keyState.down) {
             // update how long the key has been down for
             const msDown = Date.now() - keyState.whenDown;
             const msIdle = Date.now() - keyState.lastAction;
@@ -98,63 +95,119 @@ const checkKeys = () => {
                 keyState.presses = rolloverActions;
             }
         }
-        
+
         // activate the key however many times it was pressed in one update cycle
         for(;keyState.presses > 0; keyState.presses--) {
-            keyFunction();
+            keyFunction(keyState);
         }
 
-        keyBuffer[k] = keyState;
+        keyMap[k] = keyState;
     }
 }
 
 // set the current user input
 export const keyAction = (key, down) => {
+    // make sure the key is bound to an action
+    if(!Object.getOwnPropertyNames(keyMap).includes(key))
+        return;
+
     // only set key if it's down, mapped to something, and has not been held
-    if(down && Object.getOwnPropertyNames(keyMap).includes(key) && keyBuffer[key].whenDown == -1) {
-        keyBuffer[key].down = true;
-        keyBuffer[key].presses++;
-        keyBuffer[key].whenDown = Date.now();
-        keyBuffer[key].lastAction = Date.now();
+    if(down && keyMap[key].whenDown == -1) {
+        let keyState = keyMap[key];
+
+        keyState.down = true;
+        keyState.presses++;
+        keyState.whenDown = Date.now();
+        keyState.lastAction = Date.now();
+
+        keyMap[key] = keyState;
     }
     // on keyup set key as not down
     else if(!down) {
-        keyBuffer[key].down = false;
-        keyBuffer[key].rollover = false;
-        keyBuffer[key].whenDown = -1;
-        keyBuffer[key].lastAction = -1;
+        let keyState = keyMap[key];
+
+        keyState.down = false;
+        keyState.presses++;
+        keyState.rollover = false;
+        keyState.whenDown = -1;
+        keyState.lastAction = -1;
+
+        keyMap[key] = keyState;
     }
 }
 
 // keys to controls
 export let keyMap = {
-    'ArrowUp': 'rotcw',
-    'ArrowLeft': 'left',
-    'ArrowRight': 'right',
-    'ArrowDown': 'fastdrop'
+    'ArrowLeft': newKeyState('left', true),
+    'ArrowRight': newKeyState('right', true),
+    'z': newKeyState('rotLeft', false),
+    'ArrowUp': newKeyState('rotRight', false),
+    'a': newKeyState('rot180', false),
+    'ArrowDown': newKeyState('softDrop', false),
+    ' ': newKeyState('hardDrop', false),
+    'c': newKeyState('hold', false)
+
 }
 // controls to functions
 const controlMap = {
-    'rotcw': () => {
-        move(0, 1);
+    'left': (k) => {
+        if(k.down)
+            move(-1, 0);
     },
-    'left': () => {
-        move(-1, 0);
+    'right': (k) => {
+        if(k.down)
+            move(1, 0);
     },
-    'right': () => {
-        move(1, 0);
+    'rotLeft': (k) => {
+        if(k.down)    
+            move(0, 3);
     },
-    'fastdrop': () => {
+    'rotRight': (k) => {
+        if(k.down)
+            move(0, 1);
+    },
+    'rot180': (k) => {
+        if(k.down)
+            move(0, 2);
+    },
+    'softDrop': (k) => {
+        const oldTime = settings.gravityTime;
+        settings.gravityTime = k.down ? settings.softDropGravity : settings.levelGravity;
         
+        // difference factor between the set gravity and previous gravity
+        const timeCoef = settings.gravityTime / oldTime;
+        // scaled time since the last gravity tick
+        const gravityTimeScaled = (Date.now() - state.playLastGravity) * timeCoef;
+        // scaled time at the last gravity tick
+        state.playLastGravity = Date.now() - gravityTimeScaled;
+    },
+    'hardDrop': (k) => {
+        
+    },
+    'hold': (k) => {
+
     }
 }
 
 // get the current piece's grid
 const getPiece = (rot) => {
     if(rot != null)
-        return blockStore.idToLetter[state.bagA[state.bagPos]](rot);
+        return blockStore.idToLetter[state.bag[0]](rot);
 
-    return blockStore.idToLetter[state.bagA[state.bagPos]](state.playRot);
+    return blockStore.idToLetter[state.bag[0]](state.playRot);
+}
+
+// load a new piece after landing
+const nextPiece = () => {
+    // reset piece data
+    state.playX = 3;
+    state.playY = 18;
+    state.playRot = 0;
+    state.playLandTime = -1;
+    state.playLastGravity = Date.now();
+
+    // go to the next piece in bag
+    state.bag.shift();
 }
 
 // clear the piece currently being played, or lock it
@@ -178,25 +231,51 @@ const doGravity = () => {
     clearPlay(false);
 
     // how far to move a piece
-    let gravityDebt = Math.floor((Date.now() - playLastGravity) / settings.gravityTime);
+    let gravityDebt = Math.floor((Date.now() - state.playLastGravity) / settings.gravityTime);
 
     // check if enought time has passed to move the piece down
     if(gravityDebt >= 1) {
+        state.playLastGravity = Date.now();
+
         // check if piece can drop without collision
         if(!utils.checkBoxColl(state.playX, state.playY + gravityDebt, state.board, getPiece())) {
-            playLastGravity = Date.now();
+            state.playLandTime = -1;
             state.playY += gravityDebt;
         }
         // if the piece has landed then check for how long
         else {
-            if(playLandTime < 0)
-                playLandTime = Date.now()
-            else if((Date.now() - playLandTime) >= settings.lockDelay)
+            // start lock timer if the piece just landed, otherwise check if lock timer is complete
+            if(state.playLandTime < 0)
+                state.playLandTime = Date.now()
+            else if((Date.now() - state.playLandTime) >= settings.lockDelay) {
+                utils.stamp(state.playX, state.playY, state.board, getPiece());
                 clearPlay(true);
+                nextPiece();
+            }
         }
     }
 
     utils.stamp(state.playX, state.playY, state.board, getPiece());
+}
+
+// using a set of SRS wall kicks find the first one that allows the piece to rotate without hitting anything
+const kick = (rot) => {
+    const kickData = blockStore.getKickData(state.bag[0], state.playRot, rot);
+
+    for(let i = 0; i < kickData.length; i++) {
+        const kick = kickData[i];
+
+        const kickX = state.playX + kick[0];
+        const kickY = state.playY + kick[1];
+
+        if(!utils.checkBoxColl(kickX, kickY, state.board, getPiece(rot))) {
+            console.log(kick);
+            state.playX = kickX;
+            state.playY = kickY;
+            state.playRot = rot;
+            return;
+        }
+    }
 }
 
 // move or rotate a piece
@@ -209,8 +288,8 @@ const move = (dx, drot) => {
     newRot = newRot % 4;
 
     // update state with new values if theres no colision
-    if(!utils.checkBoxColl(state.playX, state.playY, state.board, getPiece(newRot)))
-        state.playRot = newRot;
+    if(drot != 0)
+        kick(newRot);
 
     if(!utils.checkBoxColl(newX, state.playY, state.board, getPiece()))
         state.playX = newX;

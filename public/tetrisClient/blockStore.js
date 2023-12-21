@@ -1,6 +1,38 @@
 // used to store grids for i, j, l, o, s, t, z blocks with 4 rotations hardcoded, also provides id to color/letter arrays
 const utils = require('./utility.js');
 
+// super rotation system (srs) wall kick tables
+const kickMatrix = {
+    '01': [ [0,0],[-1,0],[-1,1],[0,-2],[-1,-2] ],
+    '10': [	[0,0],[1,0],[1,-1],[0,2],[1,2] ],
+    '12': [ [0,0],[1,0],[1,-1],[0,2],[1,2] ],
+    '21': [ [0,0],[-1,0],[-1,1],[0,-2],[-1,-2] ],
+    '23': [ [0,0],[1,0],[1,1],[0,-2],[1,-2] ],
+    '32': [ [0,0],[-1,0],[-1,-1],[0,2],[-1,2] ],
+    '30': [ [0,0],[-1,0],[-1,-1],[0,2],[-1,2] ],
+    '03': [ [0,0],[1,0],[1,1],[0,-2],[1,-2] ]
+}
+const iKickMatrix = {
+    '01': [ [0,0],[-2,0],[1,0],[-2,-1],[1,2] ],
+    '10': [ [0,0],[2,0],[-1,0],[2,1],[-1,-2] ],
+    '12': [ [0,0],[-1,0],[2,0],[-1,2],[2,-1] ],
+    '21': [ [0,0],[1,0],[-2,0],[1,-2],[-2,1] ],
+    '23': [ [0,0],[2,0],[-1,0],[2,1],[-1,-2] ],
+    '32': [ [0,0],[-2,0],[1,0],[-2,-1],[1,2] ],
+    '30': [ [0,0],[1,0],[-2,0],[1,-2],[-2,1] ],
+    '03': [ [0,0],[-1,0],[2,0],[-1,2],[2,-1] ]
+}
+
+// get a set of kicks based on if the piece is an I piece and the rotation being performed
+export const getKickData = (minoId, startRot, endRot) => {
+    const rotState = `${startRot}${endRot}`;
+
+    if(minoId == 0)
+        return iKickMatrix[rotState];
+
+    return kickMatrix[rotState];
+}
+
 export const i = (rot) => {
     let block = utils.newGrid(4, 4);
     const blockBox = utils.newBox(false, utils.newColor(0,255,255), null);

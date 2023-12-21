@@ -20,7 +20,7 @@ export const newPlayfieldCanvas = (width, height, scale, canvasId, parentNode) =
 // draw block on tetris board
 export const drawBlock = (x, y, c, playfieldCanvas) => {
     let ctx = playfieldCanvas.getContext("2d");
-    ctx.fillStyle = c;
+    ctx.fillStyle = `rgb(${c.r}, ${c.g}, ${c.b})`;
 
     // scale the block to the board
     let sizeCoefX = playfieldCanvas.width / playfieldSizeX;
