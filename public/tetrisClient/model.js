@@ -76,7 +76,12 @@ export const controlMethods = {
         state.playLastGravity = Date.now() - gravityTimeScaled;
     },
     hardDrop: (k) => {
-        
+        if(!k.down)
+            return
+        state.playY = dropPlay();
+        clearPlay(false);
+        lockPlay();
+
     },
     hold: (k) => {
     
@@ -88,6 +93,7 @@ export const controlMethods = {
 export const tick = () => {
     // update board
     doGravity();
+    placeGhost();
 }
 
 // return canvas and state info for updating the displayed game board
@@ -142,6 +148,43 @@ const clearPlay = (lock) => {
     }
 }
 
+// when a row is completely full of locked cells clear that row and shift everything above down one
+const clearLines = () => {
+    for(let row = 0; row < state.board[0].length; row++) {
+        let rowFull = true;
+        // if a cell in the row is empty then the row is not full
+        for(let col = 0; rowFull && col < state.board.length; col++) {
+            if(state.board[col][row] == null)
+                rowFull = false;
+        }
+
+        // move everything above the current row down one if the row is full
+        if(rowFull) {
+            for(let r = row; r > 0; r--) {
+                for(let c = 0; c < state.board.length; c++) {
+                    state.board[c][r] = structuredClone(state.board[c][r - 1]);
+                }
+            }
+        }
+    }
+}
+
+// find the lowest y value the in play piece can drop to without hitting anything  
+const dropPlay = () => {
+    for(let y = state.playY; y < maxY; y++) {
+        if(gameUtils.checkBoxColl(state.playX, y, state.board, getPiece()))
+            return y - 1;
+    }
+}
+
+// ran when a piece is locked after landing
+const lockPlay = () => {
+    gameUtils.stamp(state.playX, state.playY, state.board, getPiece());
+    clearPlay(true);
+    clearLines();
+    nextPiece();
+}
+
 // move all not locked blocks in the grid down one
 const doGravity = () => {
     clearPlay(false);
@@ -163,15 +206,29 @@ const doGravity = () => {
             // start lock timer if the piece just landed, otherwise check if lock timer is complete
             if(state.playLandTime < 0)
                 state.playLandTime = Date.now()
-            else if((Date.now() - state.playLandTime) >= settings.lockDelay) {
-                gameUtils.stamp(state.playX, state.playY, state.board, getPiece());
-                clearPlay(true);
-                nextPiece();
-            }
+            else if((Date.now() - state.playLandTime) >= settings.lockDelay)
+                lockPlay();
         }
     }
 
     gameUtils.stamp(state.playX, state.playY, state.board, getPiece());
+}
+
+// draw the ghost block to show where the piece will land
+const placeGhost = () => {
+    let ghost = getPiece();
+
+    // apply ghost color
+    for(let i in ghost) {
+        for(let j in ghost[i]) {
+            let g = ghost[i][j];
+
+            if(g != null)
+                ghost[i][j].color = gameUtils.applyAlpha(g.color, gameUtils.newColor(192, 192, 192), 0.8, 1);
+        }
+    }
+
+    gameUtils.stamp(state.playX, dropPlay(), state.board, ghost);
 }
 
 // using a set of SRS wall kicks find the first one that allows the piece to rotate without hitting anything

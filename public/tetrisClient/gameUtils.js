@@ -46,6 +46,19 @@ export const newColor = (r, g, b) => {
     }
 }
 
+// blend colors to make them appear transparent using the over operator
+export const applyAlpha = (ca, cb, aa, ab) => {
+    let c = newColor(0, 0, 0);
+    let a = aa + (ab * (1 - aa));
+    const over = (c1, c2) => ((c1*aa) + ((c2*ab) * (1 - aa))) / a;
+    
+    c.r = 255 * over(ca.r / 255, cb.r / 255);
+    c.g = 255 * over(ca.g / 255, cb.g / 255);
+    c.b = 255 * over(ca.b / 255, cb.b / 255);
+
+    return c;
+}
+
 // place input onto base at x, y
 export const stamp = (x, y, base, input) => {
     for(let i = x; i < x + input.length; i++)
