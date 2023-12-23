@@ -15,8 +15,8 @@ window.onload = () => {
     const nextCanvas = draw.newPlayfieldCanvas(400, 1400, '28vh', 'holdCanvas', root);
 
     // give socketIO time to connect before rendering anything
-    socket.on('connect', () => {
-        session.init(socket);
+    socket.on('connect', async () => {
+        await session.init(socket);
 
         setup.start(session, boardCanvas, holdCanvas, nextCanvas);
     });

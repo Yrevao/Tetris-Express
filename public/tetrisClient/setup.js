@@ -7,7 +7,7 @@ const loop = require('./loop.js');
 export const start = async (session, boardCanvas, holdCanvas, nextCanvas) => {
     await model.init(session, boardCanvas, holdCanvas, nextCanvas);
 
-    input.initRollover(167, 33);
+    input.init(167, 33);
     setBinds();
 
     loop.beginLoop(60, model, input);
