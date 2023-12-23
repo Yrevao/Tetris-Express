@@ -6,6 +6,7 @@ export const init = (socket) => {
     socketSession = socket;
 }
 
+// request a new bag of 7 shuffled pieces from the server
 export const requestBag = () => {
     return new Promise((resolve, reject) => {
         utils.request({ player: socketSession.id }, window.location.origin + '/bag')
@@ -16,4 +17,9 @@ export const requestBag = () => {
                     reject('Error requesting bag');
             });
     });
+}
+
+// update the server with the state of the game in play
+export const stateUpdate = (board) => {
+    utils.request({ player: socketSession.id, board: board }, window.location.origin + '/state');
 }

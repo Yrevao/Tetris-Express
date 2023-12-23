@@ -15,7 +15,7 @@ const updateLoop = (ticksPerSecond) => {
     setTimeout(() => {
         input.checkKeys();
         model.tick();
-        gameUtils.updateCanvases([model.getGameView()]);
+        gameUtils.updateViews(model.getViews());
 
         updateLoop(ticksPerSecond);
     }, 1000 / ticksPerSecond);

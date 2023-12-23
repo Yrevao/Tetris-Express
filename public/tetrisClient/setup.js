@@ -4,8 +4,8 @@ const input = require('./input.js');
 const loop = require('./loop.js');
 
 // begin match
-export const start = async (session, playfieldCanvas) => {
-    await model.init(session, playfieldCanvas);
+export const start = async (session, boardCanvas, holdCanvas, nextCanvas) => {
+    await model.init(session, boardCanvas, holdCanvas, nextCanvas);
 
     input.initRollover(167, 33);
     setBinds();

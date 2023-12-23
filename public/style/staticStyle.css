@@ -1,7 +1,14 @@
 body {
-	background-color: grey;
+	display: flex;
+	background-color: darkgray;
+}
+
+#root {
+	flex: 1;
+	text-align: center;
 }
 
 canvas {
-	background-color: rgb(192,192,192);
+	margin: 1%;
+	background-color: black;
 }

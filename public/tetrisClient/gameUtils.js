@@ -1,11 +1,11 @@
 const draw = require('./draw.js');
 
-// update the contents of all the canvases in the passed array
-export const updateCanvases = (games) => {
-    games.forEach((game) => {
-        draw.cls(game.canvas);
-        draw.drawBoard(game.board, game.maxY, game.canvas);
-    })
+// update the contents of all the canvases with data from the passed array
+export const updateViews = (views) => {
+    views.forEach((view) => {
+        draw.cls(view.canvas);
+        draw.drawGrid(view.viewportW, view.viewportH, view.startX, view.startY, view.board, view.canvas);
+    });
 }
 
 // box factory
@@ -21,13 +21,13 @@ export const newBox = (locked, color, effect) => {
 }
 
 // box 2d array factory
-export const newGrid = (rows, cols) => {
+export const newGrid = (width, height) => {
     let outGrid = [];
 
-    for (let i = 0; i < rows; i++) {
+    for (let i = 0; i < width; i++) {
         let row = [];
 
-        for (let j = 0; j < cols; j++) {
+        for (let j = 0; j < height; j++) {
             row.push(null);
         }
 

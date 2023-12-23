@@ -1,25 +1,29 @@
 const gameUtils = require('./gameUtils.js');
 const blockStore = require('./blockStore.js');
+const draw = require('./draw.js');
 
 // outside modules
-const maxX = 10;
-const maxY = 40;
+const boardW = 10;
+const boardH = 40;
 let session = null;
 let boardCanvas = null;
+let holdCanvas = null;
+let nextCanvas = null;
 
 // gameplay settings
 let settings = {
     gravityTime: 200,           // how long the piece in play takes to move down one cell in ms
     levelGravity: 1000 / 5,     // fall speed of current level
-    softDropGravity: 1000 / 20, // fall speed of soft drop
+    softDropGravity: 1000 / 80, // fall speed of soft drop
     lockDelay: 500              // how long a piece takes to lock after landing in ms
 }
 
 // game state
 let state = {
-    board: gameUtils.newGrid(maxX, maxY),   // game board grid
+    board: gameUtils.newGrid(boardW, boardH),   // game board grid
     bag: [],                                // main piece bag
     hold: null,                             // held piece
+    held: false,                            // indicates that a piece has been held durring the current play
     playX: 3,                               // x position of piece in play
     playY: 18,                              // y position
     playRot: 0,                             // rotation
@@ -28,9 +32,11 @@ let state = {
 }
 
 // init and start game
-export const init = async (initSession, canvas) => {
+export const init = async (initSession, initBoardCanvas, initHoldCanvas, initNextCanvas) => {
     session = initSession;
-    boardCanvas = canvas;
+    boardCanvas = initBoardCanvas;
+    holdCanvas = initHoldCanvas;
+    nextCanvas = initNextCanvas;
     state.playLastGravity = Date.now();
 
     // request bags until there's enough pieces
@@ -77,17 +83,30 @@ export const controlMethods = {
     },
     hardDrop: (k) => {
         if(!k.down)
-            return
+            return;
+
         state.playY = dropPlay();
         clearPlay(false);
         lockPlay();
-
     },
     hold: (k) => {
-    
+        if(!k.down || state.held)
+            return;
+
+        if(state.hold == null) {
+            state.hold = state.bag[0];
+            nextPiece();
+            state.held = true;
+        }
+        else {
+            const buffer = state.hold;
+            state.hold = state.bag[0];
+            state.bag[0] = buffer;
+            resetPiece();
+            state.held = true;
+        }
     }
 }
-
 
 // run one update cycle
 export const tick = () => {
@@ -96,13 +115,23 @@ export const tick = () => {
     placeGhost();
 }
 
-// return canvas and state info for updating the displayed game board
-export const getGameView = () => {
-    return {
-        board: state.board,
-        maxY: maxY,
-        canvas: boardCanvas
-    }
+// return canvas and state info for updating graphics
+export const getViews = () => {
+    // generate hold grid based on if a piece is being held
+    let holdGrid = gameUtils.newGrid(4, 2);
+    if(state.hold != null)
+        holdGrid = gameUtils.stamp(0, 0, holdGrid, blockStore.idToLetter[state.hold](0));
+    // generate next grid
+    let nextGrid = gameUtils.newGrid(4, 14);
+    for(let i = 0; i < 5; i++)
+        gameUtils.stamp(0, i*3, nextGrid, blockStore.idToLetter[state.bag[1+i]](0));
+
+    // define views
+    const gameView = draw.newView(10, 20, 0, 20, state.board, boardCanvas);
+    const holdView = draw.newView(4, 2, 0, 0, holdGrid, holdCanvas);
+    const nextView = draw.newView(4, 14, 0, 0, nextGrid, nextCanvas);
+
+    return [gameView, holdView, nextView];
 }
 
 // get the current piece's grid
@@ -113,14 +142,19 @@ const getPiece = (rot) => {
     return blockStore.idToLetter[state.bag[0]](state.playRot);
 }
 
-// load a new piece after landing
-const nextPiece = () => {
-    // reset piece data
+// reset the in play piece's position and metadata to the starting values
+const resetPiece = () => {
     state.playX = 3;
     state.playY = 18;
     state.playRot = 0;
     state.playLandTime = -1;
     state.playLastGravity = Date.now();
+    state.held = false;
+}
+
+// load a new piece after landing
+const nextPiece = () => {
+    resetPiece();
 
     // go to the next piece in bag
     if(state.bag.length <= 7) {
@@ -171,7 +205,7 @@ const clearLines = () => {
 
 // find the lowest y value the in play piece can drop to without hitting anything  
 const dropPlay = () => {
-    for(let y = state.playY; y < maxY; y++) {
+    for(let y = state.playY; y < boardH; y++) {
         if(gameUtils.checkBoxColl(state.playX, y, state.board, getPiece()))
             return y - 1;
     }
@@ -183,6 +217,7 @@ const lockPlay = () => {
     clearPlay(true);
     clearLines();
     nextPiece();
+    session.stateUpdate(state.board);
 }
 
 // move all not locked blocks in the grid down one
@@ -224,7 +259,7 @@ const placeGhost = () => {
             let g = ghost[i][j];
 
             if(g != null)
-                ghost[i][j].color = gameUtils.applyAlpha(g.color, gameUtils.newColor(192, 192, 192), 0.8, 1);
+                ghost[i][j].color = gameUtils.applyAlpha(g.color, gameUtils.newColor(0, 0, 0), 0.8, 1);
         }
     }
 

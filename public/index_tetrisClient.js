@@ -8,14 +8,16 @@ const session = require('./tetrisClient/session.js');
 // generate HTML elements for tetris gameplay and start match setup
 window.onload = () => {
     // setup HTML elements for gameplay
-    let body = document.getElementsByTagName("body")[0];
+    let root = document.getElementById('root');
 
-    const mainBoard = draw.newPlayfieldCanvas(1000, 2000, '50vh', 'mainBoard', body);
+    const holdCanvas = draw.newPlayfieldCanvas(400, 200, '4vh', 'holdCanvas', root);
+    const boardCanvas = draw.newPlayfieldCanvas(1000, 2000, '40vh', 'boardCanvas', root);
+    const nextCanvas = draw.newPlayfieldCanvas(400, 1400, '28vh', 'holdCanvas', root);
 
     // give socketIO time to connect before rendering anything
     socket.on('connect', () => {
         session.init(socket);
 
-        setup.start(session, mainBoard);
+        setup.start(session, boardCanvas, holdCanvas, nextCanvas);
     });
 };
