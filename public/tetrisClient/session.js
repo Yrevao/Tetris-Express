@@ -29,5 +29,9 @@ export const requestBag = () => {
 
 // update the server with the state of the game in play
 export const stateUpdate = (board) => {
-    utils.request({ player: socketSession.id, board: board }, window.location.origin + '/state');
+    utils.request({ player: socketSession.id, board: board }, window.location.origin + '/update');
+}
+
+export const bindEvent = (eventName, method) => {
+    socketSession.on(eventName, method);
 }

@@ -1,6 +1,6 @@
-let keyMap = {};                 // map keys to methods
+let keyMap = {};                // map keys to methods
 let rolloverMs = -1;            // how long to hold a key before repeat inputs
-let rolloverSpeed = -1;          // how fast to repeat inputs
+let rolloverSpeed = -1;         // how fast to repeat inputs
 
 // keystate object
 const newKeyState = (action, doRollover) => {

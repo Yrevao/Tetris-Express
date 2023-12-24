@@ -32,11 +32,15 @@ let state = {
 }
 
 // init and start game
-export const init = async (initSession, initBoardCanvas, initHoldCanvas, initNextCanvas) => {
+export const init = async (initSession) => {
     session = initSession;
-    boardCanvas = initBoardCanvas;
-    holdCanvas = initHoldCanvas;
-    nextCanvas = initNextCanvas;
+
+    // setup HTML elements for gameplay
+    const root = document.getElementById('root');
+    holdCanvas = draw.newPlayfieldCanvas(400, 200, '4vh', 'holdCanvas', root);
+    boardCanvas = draw.newPlayfieldCanvas(1000, 2000, '40vh', 'boardCanvas', root);
+    nextCanvas = draw.newPlayfieldCanvas(400, 1400, '28vh', 'holdCanvas', root);
+
     state.playLastGravity = Date.now();
 
     // request bags until there's enough pieces
@@ -48,8 +52,8 @@ export const init = async (initSession, initBoardCanvas, initHoldCanvas, initNex
     }
 }
 
-// user input methods
-export const controlMethods = {
+// event methods, controls and SocketIO events
+export const events = {
     left: (k) => {
         if(k.down)
             move(-1, 0);
@@ -105,6 +109,9 @@ export const controlMethods = {
             resetPiece();
             state.held = true;
         }
+    },
+    update: (data) => {
+
     }
 }
 

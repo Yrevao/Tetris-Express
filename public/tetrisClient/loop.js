@@ -1,10 +1,10 @@
 const gameUtils = require('./gameUtils.js');
-let model = null;
+let game = null;
 let input = null;
 
-// begin loop with initialized model and input objects
-export const beginLoop = (ticksPerSecond, initModel, initInput) => {
-    model = initModel;
+// begin loop with initialized game and input objects
+export const beginLoop = (ticksPerSecond, initgame, initInput) => {
+    game = initgame;
     input = initInput;
 
     updateLoop(ticksPerSecond);
@@ -14,8 +14,8 @@ export const beginLoop = (ticksPerSecond, initModel, initInput) => {
 const updateLoop = (ticksPerSecond) => {
     setTimeout(() => {
         input.checkKeys();
-        model.tick();
-        gameUtils.updateViews(model.getViews());
+        game.tick();
+        gameUtils.updateViews(game.getViews());
 
         updateLoop(ticksPerSecond);
     }, 1000 / ticksPerSecond);

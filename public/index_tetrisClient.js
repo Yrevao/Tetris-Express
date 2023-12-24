@@ -1,23 +1,44 @@
+const staticStyle = require('./style/staticStyle.css');
 const { io } = require("socket.io-client");
 const socket = io(window.location.origin);
-const staticStyle = require('./style/staticStyle.css');
-const setup = require('./tetrisClient/setup.js');
-const draw = require('./tetrisClient/draw.js');
+const game = require('./tetrisClient/game.js');
+const lobby = require('./tetrisClient/lobby.js');
+const input = require('./tetrisClient/input.js');
+const loop = require('./tetrisClient/loop.js');
 const session = require('./tetrisClient/session.js');
 
 // generate HTML elements for tetris gameplay and start match setup
 window.onload = () => {
-    // setup HTML elements for gameplay
-    let root = document.getElementById('root');
-
-    const holdCanvas = draw.newPlayfieldCanvas(400, 200, '4vh', 'holdCanvas', root);
-    const boardCanvas = draw.newPlayfieldCanvas(1000, 2000, '40vh', 'boardCanvas', root);
-    const nextCanvas = draw.newPlayfieldCanvas(400, 1400, '28vh', 'holdCanvas', root);
-
     // give socketIO time to connect before rendering anything
     socket.on('connect', async () => {
         await session.init(socket);
 
-        setup.start(session, boardCanvas, holdCanvas, nextCanvas);
+        lobby.init(session);
+
+        await game.init(session);
+        setEvents(session);
+    
+        input.init(167, 33);
+        setBinds();
+    
+        loop.beginLoop(60, game, input);
     });
 };
+
+// set keybindings
+const setBinds = () => {
+    input.bindKey('ArrowLeft', game.events.left, true);
+    input.bindKey('ArrowRight', game.events.right, true);
+    input.bindKey('z', game.events.rotLeft, false);
+    input.bindKey('ArrowUp', game.events.rotRight, false);
+    input.bindKey('a', game.events.rot180, false);
+    input.bindKey('ArrowDown', game.events.softDrop, false);
+    input.bindKey(' ', game.events.hardDrop, false);
+    input.bindKey('c', game.events.hold, false);
+}
+
+// set SocketIO event methods
+const setEvents = (session) => {
+    session.bindEvent('update', game.events.update);
+    session.bindEvent('update', lobby.events.update);
+}
