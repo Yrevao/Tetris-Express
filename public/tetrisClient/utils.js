@@ -1,8 +1,8 @@
 // send formatted post request with json data
-export const request = (data, url) => {
+export const request = (data, url, get) => {
     return new Promise((resolve, reject) => {
         const params = {
-            method: 'POST',
+            method: get ? 'GET' : 'POST',
             headers: {
             'Content-Type': 'application/json;charset=utf-8'
             },

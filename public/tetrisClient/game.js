@@ -110,9 +110,6 @@ export const events = {
             state.held = true;
         }
     },
-    update: (data) => {
-
-    }
 }
 
 // run one update cycle

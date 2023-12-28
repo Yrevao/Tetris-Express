@@ -8,9 +8,10 @@ const loop = require('./tetrisClient/loop.js');
 const session = require('./tetrisClient/session.js');
 
 // generate HTML elements for tetris gameplay and start match setup
-window.onload = () => {
+const autoinit = (() => {
     // give socketIO time to connect before rendering anything
     socket.on('connect', async () => {
+        // initalize gameplay objects
         await session.init(socket);
 
         lobby.init(session);
@@ -21,9 +22,9 @@ window.onload = () => {
         input.init(167, 33);
         setBinds();
     
-        loop.beginLoop(60, game, input);
+        loop.beginLoop(60, lobby, game, input);
     });
-};
+})();
 
 // set keybindings
 const setBinds = () => {
@@ -39,6 +40,5 @@ const setBinds = () => {
 
 // set SocketIO event methods
 const setEvents = (session) => {
-    session.bindEvent('update', game.events.update);
     session.bindEvent('update', lobby.events.update);
 }
