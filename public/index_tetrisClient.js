@@ -7,25 +7,6 @@ const input = require('./tetrisClient/input.js');
 const loop = require('./tetrisClient/loop.js');
 const session = require('./tetrisClient/session.js');
 
-// generate HTML elements for tetris gameplay and start match setup
-const autoinit = (() => {
-    // give socketIO time to connect before rendering anything
-    socket.on('connect', async () => {
-        // initalize gameplay objects
-        await session.init(socket);
-
-        lobby.init(session);
-
-        await game.init(session);
-        setEvents(session);
-    
-        input.init(167, 33);
-        setBinds();
-    
-        loop.beginLoop(60, lobby, game, input);
-    });
-})();
-
 // set keybindings
 const setBinds = () => {
     input.bindKey('ArrowLeft', game.events.left, true);
@@ -41,4 +22,26 @@ const setBinds = () => {
 // set SocketIO event methods
 const setEvents = (session) => {
     session.bindEvent('update', lobby.events.update);
+    session.bindEvent('update', loop.events.update);
 }
+
+// generate HTML elements for tetris gameplay and start match setup
+window.onload = async () => {
+    // initalize gameplay objects
+    lobby.init(session);
+    game.init(session);
+    loop.init(lobby, game, input, session);
+
+    // give socketIO time to connect before starting anything
+    socket.on('connect', async () => {
+        // reset gameplay objects
+        await session.init(socket);
+        await game.start();
+        setEvents(session);
+
+        input.init(167, 33);
+        setBinds();
+
+        loop.startLoop(60)
+    });
+};

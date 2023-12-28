@@ -21,6 +21,7 @@ export const getViews = () => {
     return views;
 }
 
+// remove a board when another player leaves
 const leave = (playerId) => {
     let canvas = document.getElementById(`board-${playerId}`);
     canvas.remove();
@@ -29,10 +30,12 @@ const leave = (playerId) => {
     delete boards[playerId];
 }
 
+// when another player joins add a board
 const join = (playerId) => {
     canvases[playerId] = draw.newPlayfieldCanvas(1000, 2000, '10vh', `board-${playerId}`, boardsDiv);
 }
 
+// update the displayed boards when another player places a piece
 const update = (playerId, board) => {
     boards[playerId] = board;
 
@@ -42,6 +45,7 @@ const update = (playerId, board) => {
 
 export const events = {
     update: (data) => {
+        // update the opponent boards
         if(data.player == session.id)
             return;
 

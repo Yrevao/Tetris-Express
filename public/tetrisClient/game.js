@@ -20,19 +20,20 @@ let settings = {
 
 // game state
 let state = {
-    board: gameUtils.newGrid(boardW, boardH),   // game board grid
-    bag: [],                                // main piece bag
-    hold: null,                             // held piece
-    held: false,                            // indicates that a piece has been held durring the current play
-    playX: 3,                               // x position of piece in play
-    playY: 18,                              // y position
-    playRot: 0,                             // rotation
-    playLandTime: -1,                       // Date.now() of when the piece in play landed 
-    playLastGravity: -1                     // Date.now() of when the piece in play last moved down a cell
+    board: null,            // game board grid
+    bag: null,              // main piece bag
+    hold: null,             // held piece
+    held: null,             // indicates that a piece has been held durring the current play
+    playX: null,            // x position of piece in play
+    playY: null,            // y position
+    playRot: null,          // rotation
+    playLandTime: null,     // Date.now() of when the piece in play landed 
+    playLastGravity: null,  // Date.now() of when the piece in play last moved down a cell
+    loss: null              // indicates that the game has been lost
 }
 
 // init and start game
-export const init = async (initSession) => {
+export const init = (initSession) => {
     session = initSession;
 
     // setup HTML elements for gameplay
@@ -41,7 +42,10 @@ export const init = async (initSession) => {
     boardCanvas = draw.newPlayfieldCanvas(1000, 2000, '40vh', 'boardCanvas', root);
     nextCanvas = draw.newPlayfieldCanvas(400, 1400, '28vh', 'holdCanvas', root);
 
-    state.playLastGravity = Date.now();
+}
+
+export const start = async () => {
+    resetState();
 
     // request bags until there's enough pieces
     while(state.bag.length < 14) {
@@ -114,9 +118,11 @@ export const events = {
 
 // run one update cycle
 export const tick = () => {
-    // update board
-    doGravity();
-    placeGhost();
+    if(!state.loss) {
+        // update board
+        doGravity();
+        placeGhost();
+    }
 }
 
 // return canvas and state info for updating graphics
@@ -136,6 +142,21 @@ export const getViews = () => {
     const nextView = draw.newView(4, 14, 0, 0, nextGrid, nextCanvas);
 
     return [gameView, holdView, nextView];
+}
+
+const resetState = () => {
+    state = {
+        board: gameUtils.newGrid(boardW, boardH),   // game board grid
+        bag: [],                                    // main piece bag
+        hold: null,                                 // held piece
+        held: false,                                // indicates that a piece has been held durring the current play
+        playX: 3,                                   // x position of piece in play
+        playY: 18,                                  // y position
+        playRot: 0,                                 // rotation
+        playLandTime: -1,                           // Date.now() of when the piece in play landed 
+        playLastGravity: Date.now(),                // Date.now() of when the piece in play last moved down a cell
+        loss: false                                 // indicates that the game has been lost
+    }
 }
 
 // get the current piece's grid
@@ -215,13 +236,27 @@ const dropPlay = () => {
     }
 }
 
+// called when the game is lost due to pieces being placed outside of the visible board
+const onLoss = () => {
+    state.loss = true;
+
+    const lossColor = gameUtils.newColor(64, 64, 64);
+    gameUtils.recolor(state.board, () => lossColor);
+}
+
 // ran when a piece is locked after landing
 const lockPlay = () => {
     gameUtils.stamp(state.playX, state.playY, state.board, getPiece());
     clearPlay(true);
     clearLines();
-    nextPiece();
-    session.stateUpdate(state.board);
+
+    // check for loss
+    if(gameUtils.checkBoxColl(0, 0, state.board, gameUtils.newGrid(boardW, 20, gameUtils.newBox(false))))
+        onLoss();
+    else
+        nextPiece();
+
+    session.stateUpdate(state.board, state.loss);
 }
 
 // move all not locked blocks in the grid down one
@@ -257,15 +292,8 @@ const doGravity = () => {
 const placeGhost = () => {
     let ghost = getPiece();
 
-    // apply ghost color
-    for(let i in ghost) {
-        for(let j in ghost[i]) {
-            let g = ghost[i][j];
-
-            if(g != null)
-                ghost[i][j].color = gameUtils.applyAlpha(g.color, gameUtils.newColor(0, 0, 0), 0.8, 1);
-        }
-    }
+    gameUtils.recolor(ghost, (color) =>
+        gameUtils.applyAlpha(color, gameUtils.newColor(0, 0, 0), 0.8, 1));
 
     gameUtils.stamp(state.playX, dropPlay(), state.board, ghost);
 }

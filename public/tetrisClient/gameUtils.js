@@ -21,14 +21,14 @@ export const newBox = (locked, color, effect) => {
 }
 
 // box 2d array factory
-export const newGrid = (width, height) => {
+export const newGrid = (width, height, filler) => {
     let outGrid = [];
 
     for (let i = 0; i < width; i++) {
         let row = [];
 
         for (let j = 0; j < height; j++) {
-            row.push(null);
+            row.push(filler);
         }
 
         outGrid.push(row);
@@ -73,6 +73,20 @@ export const stamp = (x, y, base, input) => {
             }
         }
     return base;
+}
+
+// recolor blocks in a grid; method arguments: (originalColor) => return newColor
+export const recolor = (grid, method) => {
+    for(let i in grid) {
+        for(let j in grid[i]) {
+            let b = grid[i][j];
+
+            if(b != null)
+                grid[i][j].color = method(b.color);
+        }
+    }
+
+    return grid;
 }
 
 // check if input placed at a given x and y will collide with base
