@@ -2,13 +2,15 @@ const gameUtils = require('./gameUtils.js');
 const blockStore = require('./blockStore.js');
 const draw = require('./draw.js');
 
-// outside modules
+// view
 const boardW = 10;
 const boardH = 40;
 let session = null;
 let boardCanvas = null;
 let holdCanvas = null;
 let nextCanvas = null;
+let locksScore = null;
+let linesScore = null;
 
 // gameplay settings
 let settings = {
@@ -18,34 +20,51 @@ let settings = {
     lockDelay: 500              // how long a piece takes to lock after landing in ms
 }
 
-// game state
-let state = {
-    board: null,            // game board grid
-    bag: null,              // main piece bag
-    hold: null,             // held piece
-    held: null,             // indicates that a piece has been held durring the current play
-    playX: null,            // x position of piece in play
-    playY: null,            // y position
-    playRot: null,          // rotation
-    playLandTime: null,     // Date.now() of when the piece in play landed 
-    playLastGravity: null,  // Date.now() of when the piece in play last moved down a cell
-    loss: null              // indicates that the game has been lost
+const resetState = () => {
+    return {
+        board: gameUtils.newGrid(boardW, boardH),   // game board grid
+        bag: [],                                    // main piece bag
+        hold: null,                                 // held piece
+        held: false,                                // indicates that a piece has been held durring the current play
+        playX: 3,                                   // x position of piece in play
+        playY: 18,                                  // y position
+        playRot: 0,                                 // rotation
+        playLandTime: -1,                           // Date.now() of when the piece in play landed 
+        playLastGravity: Date.now(),                // Date.now() of when the piece in play last moved down a cell
+        loss: false,                                // indicates that the game has been lost
+        locks: 0,                                   // total pieces locked
+        lines: 0,                                   // total lines cleared
+    }
 }
+
+// game state
+let state = resetState();
 
 // init and start game
 export const init = (initSession) => {
     session = initSession;
 
-    // setup HTML elements for gameplay
+    // setup canvases
     const root = document.getElementById('root');
     holdCanvas = draw.newPlayfieldCanvas(400, 200, '4vh', 'holdCanvas', root);
     boardCanvas = draw.newPlayfieldCanvas(1000, 2000, '40vh', 'boardCanvas', root);
     nextCanvas = draw.newPlayfieldCanvas(400, 1400, '28vh', 'holdCanvas', root);
 
+    // setup score display
+    const scoreBoard = document.createElement('div');
+    scoreBoard.innerHTML = `
+        <span># </span><span id="locks">${state.locks}</span>
+        <br>
+        <span>Lines </span><span id="lines">${state.lines}</span>
+    `
+    root.appendChild(scoreBoard);
+
+    locksScore = document.getElementById('locks');
+    linesScore = document.getElementById('lines');
 }
 
 export const start = async () => {
-    resetState();
+    state = resetState();
 
     // request bags until there's enough pieces
     while(state.bag.length < 14) {
@@ -144,21 +163,6 @@ export const getViews = () => {
     return [gameView, holdView, nextView];
 }
 
-const resetState = () => {
-    state = {
-        board: gameUtils.newGrid(boardW, boardH),   // game board grid
-        bag: [],                                    // main piece bag
-        hold: null,                                 // held piece
-        held: false,                                // indicates that a piece has been held durring the current play
-        playX: 3,                                   // x position of piece in play
-        playY: 18,                                  // y position
-        playRot: 0,                                 // rotation
-        playLandTime: -1,                           // Date.now() of when the piece in play landed 
-        playLastGravity: Date.now(),                // Date.now() of when the piece in play last moved down a cell
-        loss: false                                 // indicates that the game has been lost
-    }
-}
-
 // get the current piece's grid
 const getPiece = (rot) => {
     if(rot != null)
@@ -219,6 +223,8 @@ const clearLines = () => {
 
         // move everything above the current row down one if the row is full
         if(rowFull) {
+            state.lines++;
+            linesScore.textContent = state.lines;
             for(let r = row; r > 0; r--) {
                 for(let c = 0; c < state.board.length; c++) {
                     state.board[c][r] = structuredClone(state.board[c][r - 1]);
@@ -253,8 +259,11 @@ const lockPlay = () => {
     // check for loss
     if(gameUtils.checkBoxColl(0, 0, state.board, gameUtils.newGrid(boardW, 20, gameUtils.newBox(false))))
         onLoss();
-    else
+    else {
+        state.locks++;
+        locksScore.textContent = state.locks;
         nextPiece();
+    }
 
     session.stateUpdate(state.board, state.loss);
 }
