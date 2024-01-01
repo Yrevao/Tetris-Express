@@ -42,6 +42,6 @@ window.onload = async () => {
         input.init(167, 33);
         setBinds();
 
-        loop.startLoop(60)
+        loop.startLoop(1000)
     });
 };

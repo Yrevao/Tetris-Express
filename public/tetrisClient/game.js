@@ -11,6 +11,9 @@ let holdCanvas = null;
 let nextCanvas = null;
 let locksScore = null;
 let linesScore = null;
+let ppsScore = null;
+let timeScore = null;
+let fpsScore = null;
 
 // gameplay settings
 let settings = {
@@ -20,147 +23,44 @@ let settings = {
     lockDelay: 500              // how long a piece takes to lock after landing in ms
 }
 
-const resetState = () => {
-    return {
-        board: gameUtils.newGrid(boardW, boardH),   // game board grid
-        bag: [],                                    // main piece bag
-        hold: null,                                 // held piece
-        held: false,                                // indicates that a piece has been held durring the current play
-        playX: 3,                                   // x position of piece in play
-        playY: 18,                                  // y position
-        playRot: 0,                                 // rotation
-        playLandTime: -1,                           // Date.now() of when the piece in play landed 
-        playLastGravity: Date.now(),                // Date.now() of when the piece in play last moved down a cell
-        loss: false,                                // indicates that the game has been lost
-        locks: 0,                                   // total pieces locked
-        lines: 0,                                   // total lines cleared
-    }
-}
-
 // game state
-let state = resetState();
-
-// init and start game
-export const init = (initSession) => {
-    session = initSession;
-
-    // setup canvases
-    const root = document.getElementById('root');
-    holdCanvas = draw.newPlayfieldCanvas(400, 200, '4vh', 'holdCanvas', root);
-    boardCanvas = draw.newPlayfieldCanvas(1000, 2000, '40vh', 'boardCanvas', root);
-    nextCanvas = draw.newPlayfieldCanvas(400, 1400, '28vh', 'holdCanvas', root);
-
-    // setup score display
-    const scoreBoard = document.createElement('div');
-    scoreBoard.innerHTML = `
-        <span># </span><span id="locks">${state.locks}</span>
-        <br>
-        <span>Lines </span><span id="lines">${state.lines}</span>
-    `
-    root.appendChild(scoreBoard);
-
-    locksScore = document.getElementById('locks');
-    linesScore = document.getElementById('lines');
+let state = {
+    board: gameUtils.newGrid(boardW, boardH),   // game board grid
+    bag: [],                                    // main piece bag
+    hold: null,                                 // held piece
+    held: false,                                // indicates that a piece has been held durring the current play
+    playX: 3,                                   // x position of piece in play
+    playY: 18,                                  // y position
+    playRot: 0,                                 // rotation
+    playLandTime: -1,                           // Date.now() of when the piece in play landed 
+    playLastGravity: Date.now(),                // Date.now() of when the piece in play last moved down a cell
+    loss: false,                                // indicates that the game has been lost
+    locks: 0,                                   // total pieces locked
+    lines: 0,                                   // total lines cleared
+    pps: 0,                                     // pieces per second
+    start: Date.now(),                          // Date.now() of when the game started
+    frames: 0,                                  // frames per second
+    frameTimer: Date.now(),                     // when the current second started
 }
 
-export const start = async () => {
-    state = resetState();
-
-    // request bags until there's enough pieces
-    while(state.bag.length < 14) {
-        await session.requestBag()
-            .then(nextBag => {
-                state.bag = state.bag.concat(nextBag);
-            });
-    }
-}
-
-// event methods, controls and SocketIO events
-export const events = {
-    left: (k) => {
-        if(k.down)
-            move(-1, 0);
-    },
-    right: (k) => {
-        if(k.down)
-            move(1, 0);
-    },
-    rotLeft: (k) => {
-        if(k.down)    
-            move(0, 3);
-    },
-    rotRight: (k) => {
-        if(k.down)
-            move(0, 1);
-    },
-    rot180: (k) => {
-        if(k.down)
-            move(0, 2);
-    },
-    softDrop: (k) => {
-        const oldTime = settings.gravityTime;
-        settings.gravityTime = k.down ? settings.softDropGravity : settings.levelGravity;
-        
-        // difference factor between the set gravity and previous gravity
-        const timeCoef = settings.gravityTime / oldTime;
-        // scaled time since the last gravity tick
-        const gravityTimeScaled = (Date.now() - state.playLastGravity) * timeCoef;
-        // scaled time at the last gravity tick
-        state.playLastGravity = Date.now() - gravityTimeScaled;
-    },
-    hardDrop: (k) => {
-        if(!k.down)
-            return;
-
-        state.playY = dropPlay();
-        clearPlay(false);
-        lockPlay();
-    },
-    hold: (k) => {
-        if(!k.down || state.held)
-            return;
-
-        if(state.hold == null) {
-            state.hold = state.bag[0];
-            nextPiece();
-            state.held = true;
-        }
-        else {
-            const buffer = state.hold;
-            state.hold = state.bag[0];
-            state.bag[0] = buffer;
-            resetPiece();
-            state.held = true;
-        }
-    },
-}
-
-// run one update cycle
-export const tick = () => {
-    if(!state.loss) {
-        // update board
-        doGravity();
-        placeGhost();
-    }
-}
-
-// return canvas and state info for updating graphics
-export const getViews = () => {
-    // generate hold grid based on if a piece is being held
-    let holdGrid = gameUtils.newGrid(4, 2);
-    if(state.hold != null)
-        holdGrid = gameUtils.stamp(0, 0, holdGrid, blockStore.idToLetter[state.hold](0));
-    // generate next grid
-    let nextGrid = gameUtils.newGrid(4, 14);
-    for(let i = 0; i < 5; i++)
-        gameUtils.stamp(0, i*3, nextGrid, blockStore.idToLetter[state.bag[1+i]](0));
-
-    // define views
-    const gameView = draw.newView(10, 20, 0, 20, state.board, boardCanvas);
-    const holdView = draw.newView(4, 2, 0, 0, holdGrid, holdCanvas);
-    const nextView = draw.newView(4, 14, 0, 0, nextGrid, nextCanvas);
-
-    return [gameView, holdView, nextView];
+// reset state to starting defaults
+const resetState = () => {
+    state.board = gameUtils.newGrid(boardW, boardH);
+    state.bag = [];
+    state.hold = null;
+    state.held = false;
+    state.playX = 3;
+    state.playY = 18;
+    state.playRot = 0;
+    state.playLandTime = -1;
+    state.playLastGravity = Date.now();
+    state.loss = false;
+    state.locks = 0;
+    state.lines = 0;
+    state.pps = 0;
+    state.start = Date.now();
+    state.frames = 0;
+    state.frameTimer = Date.now();
 }
 
 // get the current piece's grid
@@ -260,8 +160,14 @@ const lockPlay = () => {
     if(gameUtils.checkBoxColl(0, 0, state.board, gameUtils.newGrid(boardW, 20, gameUtils.newBox(false))))
         onLoss();
     else {
+        // update total locked pieces and plays per second
         state.locks++;
         locksScore.textContent = state.locks;
+
+        const duration = Date.now() - state.start;
+        ppsScore.textContent = (state.locks / (duration / 1000)).toFixed(2);
+
+        // spawn next piece
         nextPiece();
     }
 
@@ -341,4 +247,174 @@ const move = (dx, drot) => {
 
     if(!gameUtils.checkBoxColl(newX, state.playY, state.board, getPiece()))
         state.playX = newX;
+}
+
+// return min:sec:ms of how long the game has been running
+const formatPlayTime = () => {
+    const duration = Date.now() - state.start;
+    const sec = Math.floor(duration / 1000);
+    const min = Math.floor(sec / 60);
+
+    return `${min}:${sec % 60}:${duration % 1000}`;
+}
+
+// return frames per second
+const formatFps = () => {
+    // how many seconds have passed since the last fps check
+    const second = (Date.now() - state.frameTimer) / 1000;
+    // frames per second average since the last time fps was checked
+    const fps = state.frames / second;
+
+    // how much second has passed since a full second after the last fps check
+    const secondDiff = second - 1; 
+    if(secondDiff > 0) {
+        // adjust frame timer so that {const second} is widthin 1 second
+        state.frameTimer += secondDiff * 1000;
+        // adjust frame count to 1 seconds worth of frames
+        state.frames -= fps / (1 / secondDiff);
+    }
+
+    return fps.toFixed(1);
+}
+
+// init objects
+export const init = (initSession) => {
+    session = initSession;
+
+    // setup canvases
+    const root = document.getElementById('root');
+    holdCanvas = draw.newPlayfieldCanvas(400, 200, '4vh', 'holdCanvas', root);
+    boardCanvas = draw.newPlayfieldCanvas(1000, 2000, '40vh', 'boardCanvas', root);
+    nextCanvas = draw.newPlayfieldCanvas(400, 1400, '28vh', 'holdCanvas', root);
+
+    // setup score display
+    const scoreBoard = document.createElement('div');
+    scoreBoard.innerHTML = `
+        <span># </span><span id="locks">${state.locks}</span>
+        <br>
+        <span>Lines </span><span id="lines">${state.lines}</span>
+        <br>
+        <span>PPS </span><span id="pps">${state.pps}</span>
+        <br>
+        <span>Time </span><span id="time">${formatPlayTime()}</span>
+        <br>
+        <span>FPS </span><span id="fps"><${formatFps()}</span>
+    `
+    root.appendChild(scoreBoard);
+
+    locksScore = document.getElementById('locks');
+    linesScore = document.getElementById('lines');
+    ppsScore = document.getElementById('pps');
+    timeScore = document.getElementById('time');
+    fpsScore = document.getElementById('fps');
+}
+
+// prepare game for tick cycle
+export const start = async () => {
+    resetState();
+
+    locksScore.textContent = 0;
+    linesScore.textContent = 0;
+    ppsScore.textContent = 0;
+    timeScore.textContent = formatPlayTime();
+    fpsScore.textContent = formatFps();
+
+    // request bags until there's enough pieces
+    while(state.bag.length < 14) {
+        await session.requestBag()
+            .then(nextBag => {
+                state.bag = state.bag.concat(nextBag);
+            });
+    }
+}
+
+// event methods, controls and SocketIO events
+export const events = {
+    left: (k) => {
+        if(k.down)
+            move(-1, 0);
+    },
+    right: (k) => {
+        if(k.down)
+            move(1, 0);
+    },
+    rotLeft: (k) => {
+        if(k.down)    
+            move(0, 3);
+    },
+    rotRight: (k) => {
+        if(k.down)
+            move(0, 1);
+    },
+    rot180: (k) => {
+        if(k.down)
+            move(0, 2);
+    },
+    softDrop: (k) => {
+        const oldTime = settings.gravityTime;
+        settings.gravityTime = k.down ? settings.softDropGravity : settings.levelGravity;
+        
+        // difference factor between the set gravity and previous gravity
+        const timeCoef = settings.gravityTime / oldTime;
+        // scaled time since the last gravity tick
+        const gravityTimeScaled = (Date.now() - state.playLastGravity) * timeCoef;
+        // scaled time at the last gravity tick
+        state.playLastGravity = Date.now() - gravityTimeScaled;
+    },
+    hardDrop: (k) => {
+        if(!k.down)
+            return;
+
+        state.playY = dropPlay();
+        clearPlay(false);
+        lockPlay();
+    },
+    hold: (k) => {
+        if(!k.down || state.held)
+            return;
+
+        if(state.hold == null) {
+            state.hold = state.bag[0];
+            nextPiece();
+            state.held = true;
+        }
+        else {
+            const buffer = state.hold;
+            state.hold = state.bag[0];
+            state.bag[0] = buffer;
+            resetPiece();
+            state.held = true;
+        }
+    },
+}
+
+// run one update cycle
+export const tick = () => {
+    // update board if the game hasn't been lost
+    if(!state.loss) {
+        doGravity();
+        placeGhost();
+        state.frames++;
+        fpsScore.textContent = formatFps();
+        timeScore.textContent = formatPlayTime();
+    }
+}
+
+// return canvas and state info for updating graphics
+export const getViews = () => {
+    // generate hold grid based on if a piece is being held
+    let holdGrid = gameUtils.newGrid(4, 2);
+    if(state.hold != null)
+        holdGrid = gameUtils.stamp(0, 0, holdGrid, blockStore.idToLetter[state.hold](0));
+    // generate next grid
+    let nextGrid = gameUtils.newGrid(4, 14);
+    for(let i = 0; i < 5; i++)
+        gameUtils.stamp(0, i*3, nextGrid, blockStore.idToLetter[state.bag[1+i]](0));
+
+    // define views
+    const gameView = draw.newView(10, 20, 0, 20, state.board, boardCanvas);
+    const holdView = draw.newView(4, 2, 0, 0, holdGrid, holdCanvas);
+    const nextView = draw.newView(4, 14, 0, 0, nextGrid, nextCanvas);
+
+    return [gameView, holdView, nextView];
 }
