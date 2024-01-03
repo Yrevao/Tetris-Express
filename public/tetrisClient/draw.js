@@ -19,7 +19,7 @@ export const newPlayfieldCanvas = (width, height, scale, canvasId, parentNode) =
     playfield.id = canvasId;
     playfield.width = width;
     playfield.height = height;
-    playfield.style = `height: ${scale}`;
+    playfield.style.height = scale;
     parentNode.appendChild(playfield);
     
     return playfield;

@@ -1,3 +1,4 @@
+const gameUtils = require('./gameUtils');
 const draw = require('./draw');
 let session = null;
 let boardsDiv = null
@@ -6,9 +7,9 @@ let boards = {};
 
 export const init = (initSession) => {
     session = initSession;
-
     const root = document.getElementById('root');
     boardsDiv = document.createElement('div');
+    boardsDiv.id = 'boards';
     root.appendChild(boardsDiv);
 }
 
@@ -21,7 +22,7 @@ export const getViews = () => {
     return views;
 }
 
-// remove a board when another player leaves
+// remove board when a player leaves
 const leave = (playerId) => {
     let canvas = document.getElementById(`board-${playerId}`);
     canvas.remove();
@@ -33,6 +34,15 @@ const leave = (playerId) => {
 // when another player joins add a board
 const join = (playerId) => {
     canvases[playerId] = draw.newPlayfieldCanvas(1000, 2000, '10vh', `board-${playerId}`, boardsDiv);
+
+    let canvasArr = Object.keys(canvases);
+    canvasArr.sort((a, b) => {
+        return a.localeCompare(b, "en");
+    });
+    canvasArr.forEach((id, i) => {
+        console.log(canvases[id].style);
+        canvases[id].style.order = i;
+    })
 }
 
 // update the displayed boards when another player places a piece
@@ -43,6 +53,18 @@ const update = (playerId, board) => {
         join(playerId);
 }
 
+const initBoards = (players) => {
+    boardsDiv.innerHTML = '';
+
+    for(let playerId in players) {
+        if(playerId == session.id)
+            continue;
+
+        const board = players[playerId].board.length == 0 ? gameUtils.newGrid(10, 40) : players[playerId].board;
+        update(playerId, board);
+    }
+}
+
 export const events = {
     update: (data) => {
         // update the opponent boards
@@ -50,6 +72,9 @@ export const events = {
             return;
 
         switch(data.flag) {
+            case 'init':
+                initBoards(data.players);
+                break;
             case 'update':
                 update(data.player, data.board);
                 break;
