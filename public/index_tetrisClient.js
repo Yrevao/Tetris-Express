@@ -23,12 +23,13 @@ const setBinds = () => {
 const setEvents = (session) => {
     session.bindEvent('update', lobby.events.update);
     session.bindEvent('update', loop.events.update);
+    session.bindEvent('start', loop.events.start);
 }
 
 // generate HTML elements for tetris gameplay and start match setup
 window.onload = async () => {
     // initalize gameplay objects
-    lobby.init(session);
+    await lobby.init(session);
     game.init(session);
     loop.init(lobby, game, input, session);
 
@@ -36,12 +37,9 @@ window.onload = async () => {
     socket.on('connect', async () => {
         // reset gameplay objects
         await session.init(socket);
-        await game.start();
         setEvents(session);
 
         input.init(167, 33);
         setBinds();
-
-        loop.startLoop(1000)
     });
 };

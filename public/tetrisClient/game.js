@@ -347,8 +347,11 @@ export const events = {
             move(0, 1);
     },
     rot180: (k) => {
-        if(k.down)
-            move(0, 2);
+        if(!k.down)
+            return;
+        
+        move(0, 1);
+        move(0, 1);
     },
     softDrop: (k) => {
         const oldTime = settings.gravityTime;
