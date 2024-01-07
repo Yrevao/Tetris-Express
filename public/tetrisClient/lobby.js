@@ -5,6 +5,8 @@ let session = null;
 let rootDiv = null;
 let boardsDiv = null;
 let startButton = null;
+let settingsButton = null;
+let settingsModal = null;
 let opponents = {};
 let canvases = {};
 let boards = {};
@@ -70,6 +72,46 @@ const startMatch = () => {
         });
 }
 
+// open settings menu
+const openSettings = () => {
+    if(settingsModal == null)
+        return;
+
+    settingsModal.style.display = 'block';
+}
+
+const closeSettings = () => {
+    if(settingsModal == null)
+        return;
+
+    settingsModal.style.display = 'none';
+}
+
+// generate settings modal
+const newSettingsModal = () => {
+    settingsModal = document.createElement('div');
+    settingsModal.id = 'settingsModal';
+
+    let menuDiv = document.createElement('div');
+    menuDiv.id = 'settingsMenu';
+
+    // add menu elements
+    menuDiv.innerHTML = `
+        <span class="close">&times;</span>
+        <p>Tetris Settings</p>
+    `;
+
+    settingsModal.appendChild(menuDiv);
+    rootDiv.appendChild(settingsModal);
+
+    // close the modal if the close button or if the page around the modal is clicked
+    document.getElementsByClassName('close')[0].onclick = closeSettings;
+    window.onclick = (event) => {
+        if(event.target == settingsModal)
+            closeSettings();
+    }
+}
+
 // clear and repopulate opponent boards display
 const initBoards = (players) => {
     boardsDiv.innerHTML = '';
@@ -82,15 +124,23 @@ const initBoards = (players) => {
         update(playerId, board, players[playerId].username);
     }
 
-    // give player a start button if they are the host
+    // give player host UI elements (start and settings button)
     if(session.isHost) {
-        if(startButton)
+        if(startButton) {
             startButton.remove();
+            settingsButton.remove();
+        }
         
         startButton = document.createElement('button');
         startButton.textContent = 'Start';
         startButton.onclick = startMatch;
         rootDiv.appendChild(startButton);
+
+        newSettingsModal();
+        settingsButton = document.createElement('button');
+        settingsButton.textContent = 'Settings';
+        settingsButton.onclick = openSettings;
+        rootDiv.appendChild(settingsButton);
     }
 }
 

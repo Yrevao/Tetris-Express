@@ -3,12 +3,44 @@ body {
 	background-color: darkgray;
 }
 
+canvas {
+	margin: 1%;
+	background-color: black;
+}
+
 #root {
 	flex: 1;
 	text-align: center;
 }
 
-canvas {
-	margin: 1%;
-	background-color: black;
+#settingsModal {
+	display: none;
+	position: fixed;
+	z-index: 1;
+	padding-top: 20%;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	overflow: auto;
+	background-color: rgba(0,0,0,0.6);
+}
+
+#settingsMenu {
+	background-color: white;
+	margin: auto;
+	padding: 10px;
+	width: 30%;
+}
+
+.close {
+	font-size: 28px;
+	font-weight: bold;
+	float: right;
+}
+
+.close:hover,
+.close:focus {
+	text-decoration: none;
+	cursor: pointer;
 }
