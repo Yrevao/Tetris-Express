@@ -19,15 +19,36 @@ let opponents = {};
 let canvases = {};
 let boards = {};
 let users = {};
-// settings object
-let settingList = {
+// settings data
+let localSettingList = {    // local settings are set on the client side
     autorepeatDelay: 167,
-    autorepeatSpeed: 33
+    autorepeatSpeed: 33,
+
 }
+let globalSettingList = {   // global settings are set for all players by the host
+    forceSettings: false,
+    sevenBag: true,
+}
+let localSettingHTML = `
+<p>Local Settings</p>
+    <label for="autorepeatDelay">Key Autorepeat Delay (ms):</label> 
+        <input type="number" required minlength="1" value=167 id="autorepeatDelay"></input>
+    <br>
+    <label for="autorepeatSpeed">Key Autorepeat Speed (ms):</label> 
+        <input type="number" required minlength="1" min="1" value=33 id="autorepeatSpeed"></input>
+`;
+let globalSettingHTML = `
+<p>Global Settings</p>
+    <label for="forceSettings">Enforce Local Settings</label>
+        <input type="checkbox" id="forceSettings">
+    <br>
+    <label for="sevenBag">7-Bag RNG:</label>
+        <input type="checkbox" id="sevenBag" checked="true">
+`
 // settings menu methods
 let settingMethods = {
-    autorepeatDelay: (ms) => { settingList.autorepeatDelay = ms },
-    autorepeatSpeed: (ms) => { settingList.autorepeatSpeed = ms }
+    autorepeatDelay: (ms) => { localSettingList.autorepeatDelay = ms },
+    autorepeatSpeed: (ms) => { localSettingList.autorepeatSpeed = ms }
 }
 
 // remove board when a player leaves
@@ -83,7 +104,7 @@ const update = (playerId, board, username) => {
 
 // start the match
 const startMatch = () => {
-    utils.request({player: session.id, match: session.match}, window.location.origin + '/start')
+    utils.request({player: session.id, match: session.match, settings: {local: localSettingList, global: globalSettingList}}, window.location.origin + '/start')
         .then((data) => {
             // match started
         });
@@ -94,38 +115,69 @@ const openSettings = () => {
     if(settingsModal == null)
         return;
 
-    for(let setting in settingList) {
-        document.getElementById(setting).textContent = settingList[setting];
+    for(let setting in localSettingList) {
+        setUISetting(setting, localSettingList[setting]);
     }
 
     settingsModal.style.display = 'block';
 }
 
 const closeSettings = () => {
-    if(settingsModal == null)
-        return;
-
     settingsModal.style.display = 'none';
 }
 
 const setSettings = () => {
-    for(let setting in settingMethods) {
-        let value = settingList[setting];
+    for(let setting in localSettingList) {
+        let value = localSettingList[setting];
         settingMethods[setting](value);
     }
 
-    input.setRollover(settingList.autorepeatDelay, settingList.autorepeatSpeed);
+    input.setRollover(localSettingList.autorepeatDelay, localSettingList.autorepeatSpeed);
 }
 
-const saveSettings = () => {
-    for(let setting in settingMethods) {
-        let value = document.getElementById(setting).value;
-        settingList[setting] = value;
-        console.log(setting + ' ' + value);
+// set setting only in UI
+const setUISetting = (setting, value) => {
+    const settingElement = document.getElementById(setting);
+
+    switch(settingElement.type) {
+        case "number":
+            settingElement.value = value;
+            break;
+        case "checkbox":
+            settingElement.checked = value;
+            break;
     }
+}
+
+const getUISetting = (setting) => {
+    const settingElement = document.getElementById(setting);
+
+    switch(settingElement.type) {
+        case "number":
+            return settingElement.value;
+        case "checkbox":
+            return settingElement.checked;
+    }
+}
+
+const saveSettings = (event) => {
+    event.preventDefault();
+
+    for(let setting in localSettingList) {
+        let value = getUISetting(setting);
+        localSettingList[setting] = value;
+    }
+    if(session.isHost)
+        for(let setting in globalSettingList) {
+            let value = getUISetting(setting);
+            globalSettingList[setting] = value;
+        }
 
     setSettings();
     closeSettings();
+
+    // keep form from refreshing page
+    return false;
 }
 
 // generate settings modal
@@ -139,17 +191,18 @@ const newSettingsModal = () => {
     // add menu elements
     menuDiv.innerHTML = `
         <span class="close">&times;</span>
-        <p>Tetris Settings</p>
-        Key Autorepeat Delay (ms): <textarea rows=1 cols=10 id="autorepeatDelay"></textarea>
+        <form id="settingsForm">
+            ${localSettingHTML}
         <br>
-        Key Autorepeat Speed (ms): <textarea rows=1 cols=10 id="autorepeatSpeed"></textarea>
+            ${session.isHost ? globalSettingHTML : '<i>You must be host to change global settings</i>'}
         <br>
-        <button id="saveButton">Save</button>
+        <input type="submit" value="Save">
+        </form>
     `;
 
     settingsModal.appendChild(menuDiv);
     rootDiv.appendChild(settingsModal);
-    document.getElementById('saveButton').onclick = saveSettings;
+    document.getElementById('settingsForm').addEventListener('submit', saveSettings);
 
     // close the modal if the close button or if the page around the modal is clicked
     document.getElementsByClassName('close')[0].onclick = closeSettings;
@@ -157,6 +210,19 @@ const newSettingsModal = () => {
         if(event.target == settingsModal)
             closeSettings();
     }
+}
+
+// give player host UI elements (start button)
+const setHostUi = () => {
+    if(startButton) {
+        startButton.remove();
+        settingsButton.remove();
+    }
+    
+    startButton = document.createElement('button');
+    startButton.textContent = 'Start';
+    startButton.onclick = startMatch;
+    rootDiv.appendChild(startButton);
 }
 
 // clear and repopulate opponent boards display
@@ -171,30 +237,22 @@ const initBoards = (players) => {
         update(playerId, board, players[playerId].username);
     }
 
-    // give player host UI elements (start and settings button)
-    if(session.isHost) {
-        if(startButton) {
-            startButton.remove();
-            settingsButton.remove();
-        }
-        
-        startButton = document.createElement('button');
-        startButton.textContent = 'Start';
-        startButton.onclick = startMatch;
-        rootDiv.appendChild(startButton);
 
-        newSettingsModal();
-        settingsButton = document.createElement('button');
-        settingsButton.textContent = 'Settings';
-        settingsButton.onclick = openSettings;
-        rootDiv.appendChild(settingsButton);
-    }
+    if(session.isHost)
+        setHostUi();
+
+    // UI elements all players get
+    newSettingsModal();
+    settingsButton = document.createElement('button');
+    settingsButton.textContent = 'Settings';
+    settingsButton.onclick = openSettings;
+    rootDiv.appendChild(settingsButton);
 }
 
 // when you are the only player left in a match you become the host
 const becomeHost = () => {
     session.becomeHost();
-    initBoards();
+    setHostUi();
 }
 
 // set keybindings
@@ -244,7 +302,14 @@ export const events = {
         }
     },
     start: async (data) => {
+        // sync settings to host
+        if(data.global.forceSettings)
+            localSettingList = data.local;
+
+        globalSettingList = data.global;
         setSettings();
+
+        // start match
         await game.start();
         loop.start(1000, tickMethod);
     }

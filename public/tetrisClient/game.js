@@ -311,7 +311,7 @@ export const init = (initSession) => {
 }
 
 // prepare game for tick cycle
-export const start = async () => {
+export const start = async (settings) => {
     resetState();
 
     locksScore.textContent = 0;
