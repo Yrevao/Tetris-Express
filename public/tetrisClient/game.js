@@ -17,7 +17,7 @@ let fpsScore = null;
 
 // gameplay settings
 let settings = {
-    gravityTime: 500,           // how long the piece in play takes to move down one cell in ms
+    gravityTime: null,          // how long the piece in play takes to move down one cell in ms
     levelGravity: 1000 / 5,     // fall speed of current level
     softDropGravity: 1000 / 80, // fall speed of soft drop
     lockDelay: 500              // how long a piece takes to lock after landing in ms
@@ -280,6 +280,7 @@ const formatFps = () => {
 // init objects
 export const init = (initSession) => {
     session = initSession;
+    settings.gravityTime = settings.levelGravity;
 
     // setup canvases
     const root = document.getElementById('root');

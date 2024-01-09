@@ -1,17 +1,34 @@
+// modules
 const gameUtils = require('./gameUtils');
 const utils = require('./utils');
 const draw = require('./draw');
+const loop = require('./loop.js');
+const input = require('./input.js');
+// shared objects
 let session = null;
+let game = null;
+// page separation
 let rootDiv = null;
 let boardsDiv = null;
+let settingsModal = null;
+// buttons
 let startButton = null;
 let settingsButton = null;
-let settingsModal = null;
+// other players
 let opponents = {};
 let canvases = {};
 let boards = {};
 let users = {};
-export let userName = '';
+// settings object
+let settingList = {
+    autorepeatDelay: 167,
+    autorepeatSpeed: 33
+}
+// settings menu methods
+let settingMethods = {
+    autorepeatDelay: (ms) => { settingList.autorepeatDelay = ms },
+    autorepeatSpeed: (ms) => { settingList.autorepeatSpeed = ms }
+}
 
 // remove board when a player leaves
 const leave = (playerId) => {
@@ -77,6 +94,10 @@ const openSettings = () => {
     if(settingsModal == null)
         return;
 
+    for(let setting in settingList) {
+        document.getElementById(setting).textContent = settingList[setting];
+    }
+
     settingsModal.style.display = 'block';
 }
 
@@ -85,6 +106,26 @@ const closeSettings = () => {
         return;
 
     settingsModal.style.display = 'none';
+}
+
+const setSettings = () => {
+    for(let setting in settingMethods) {
+        let value = settingList[setting];
+        settingMethods[setting](value);
+    }
+
+    input.setRollover(settingList.autorepeatDelay, settingList.autorepeatSpeed);
+}
+
+const saveSettings = () => {
+    for(let setting in settingMethods) {
+        let value = document.getElementById(setting).value;
+        settingList[setting] = value;
+        console.log(setting + ' ' + value);
+    }
+
+    setSettings();
+    closeSettings();
 }
 
 // generate settings modal
@@ -99,10 +140,16 @@ const newSettingsModal = () => {
     menuDiv.innerHTML = `
         <span class="close">&times;</span>
         <p>Tetris Settings</p>
+        Key Autorepeat Delay (ms): <textarea rows=1 cols=10 id="autorepeatDelay"></textarea>
+        <br>
+        Key Autorepeat Speed (ms): <textarea rows=1 cols=10 id="autorepeatSpeed"></textarea>
+        <br>
+        <button id="saveButton">Save</button>
     `;
 
     settingsModal.appendChild(menuDiv);
     rootDiv.appendChild(settingsModal);
+    document.getElementById('saveButton').onclick = saveSettings;
 
     // close the modal if the close button or if the page around the modal is clicked
     document.getElementsByClassName('close')[0].onclick = closeSettings;
@@ -150,11 +197,33 @@ const becomeHost = () => {
     initBoards();
 }
 
+// set keybindings
+const setBinds = () => {
+    input.bindKey('ArrowLeft', game.events.left, true);
+    input.bindKey('ArrowRight', game.events.right, true);
+    input.bindKey('z', game.events.rotLeft, false);
+    input.bindKey('ArrowUp', game.events.rotRight, false);
+    input.bindKey('a', game.events.rot180, false);
+    input.bindKey('ArrowDown', game.events.softDrop, false);
+    input.bindKey(' ', game.events.hardDrop, false);
+    input.bindKey('c', game.events.hold, false);
+}
+
+const tickMethod = () => {
+    input.checkKeys();
+    game.tick();
+
+    const views = game.getViews().concat(getViews());
+    gameUtils.updateViews(views);
+}
+
 export const events = {
     update: (data) => {
         // update the opponent boards only if the update is for another player
         if(data.player == session.id)
             return;
+        else if(data.player == session.id && data.lost)
+            loop.stop();
 
         switch(data.flag) {
             case 'init':
@@ -173,11 +242,18 @@ export const events = {
                 becomeHost();
                 break;
         }
+    },
+    start: async (data) => {
+        setSettings();
+        await game.start();
+        loop.start(1000, tickMethod);
     }
 }
 
-export const init = (initSession) => {
+export const init = (initSession, initGame) => {
     session = initSession;
+    game = initGame;
+    setBinds();
 
     // setup gui elements
     rootDiv = document.getElementById('root');

@@ -15,7 +15,7 @@ const newKeyState = (action, doRollover) => {
     }
 }
 
-export const init = (delay, speed) => {
+export const setRollover = (delay, speed) => {
     rolloverMs = delay;
     rolloverSpeed = speed;
 }
