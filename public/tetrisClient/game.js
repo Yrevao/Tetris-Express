@@ -9,6 +9,7 @@ let session = null;
 let boardCanvas = null;
 let holdCanvas = null;
 let nextCanvas = null;
+let usernameScore = null;
 let locksScore = null;
 let linesScore = null;
 let ppsScore = null;
@@ -283,14 +284,20 @@ export const init = (initSession) => {
     settings.gravityTime = settings.levelGravity;
 
     // setup canvases
-    const root = document.getElementById('root');
-    holdCanvas = draw.newPlayfieldCanvas(400, 200, '4vh', 'holdCanvas', root);
-    boardCanvas = draw.newPlayfieldCanvas(1000, 2000, '40vh', 'boardCanvas', root);
-    nextCanvas = draw.newPlayfieldCanvas(400, 1400, '28vh', 'holdCanvas', root);
+    let gameBoardsDiv = document.createElement('div');
+    gameBoardsDiv.id = 'game';
+    document.getElementById('root').appendChild(gameBoardsDiv);
+
+    holdCanvas = draw.newPlayfieldCanvas(400, 200, '4vh', 'holdCanvas', gameBoardsDiv);
+    boardCanvas = draw.newPlayfieldCanvas(1000, 2000, '40vh', 'boardCanvas', gameBoardsDiv);
+    nextCanvas = draw.newPlayfieldCanvas(400, 1400, '28vh', 'nextCanvas', gameBoardsDiv);
 
     // setup score display
     const scoreBoard = document.createElement('div');
+    scoreBoard.id = 'scoreboard';
     scoreBoard.innerHTML = `
+        <span id="usernameScore">none</span>
+        <br>
         <span># </span><span id="locks">${state.locks}</span>
         <br>
         <span>Lines </span><span id="lines">${state.lines}</span>
@@ -303,6 +310,7 @@ export const init = (initSession) => {
     `
     root.appendChild(scoreBoard);
 
+    usernameScore = document.getElementById('usernameScore');
     locksScore = document.getElementById('locks');
     linesScore = document.getElementById('lines');
     ppsScore = document.getElementById('pps');
@@ -389,7 +397,7 @@ export const events = {
             resetPiece();
             state.held = true;
         }
-    },
+    }
 }
 
 // run one update cycle
@@ -421,4 +429,8 @@ export const getViews = () => {
     const nextView = draw.newView(4, 14, 0, 0, nextGrid, nextCanvas);
 
     return [gameView, holdView, nextView];
+}
+
+export const updateUsername = (name) => {
+    usernameScore.textContent = name;
 }

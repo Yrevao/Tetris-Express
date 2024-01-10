@@ -9,6 +9,7 @@ const session = require('./tetrisClient/session.js');
 const setEvents = (session) => {
     session.bindEvent('update', lobby.events.update);
     session.bindEvent('start', lobby.events.start);
+    session.bindEvent('reset', lobby.events.end);
 }
 
 // generate HTML elements for tetris gameplay and start match setup
@@ -22,5 +23,6 @@ window.onload = async () => {
         // reset gameplay objects
         await session.init(socket);
         setEvents(session);
+        game.updateUsername(session.username);
     });
 };

@@ -9,10 +9,12 @@ let session = null;
 let game = null;
 // page separation
 let rootDiv = null;
+let controlsDiv = null;
 let boardsDiv = null;
 let settingsModal = null;
 // buttons
 let startButton = null;
+let endButton = null;
 let settingsButton = null;
 // other players
 let opponents = {};
@@ -21,9 +23,9 @@ let boards = {};
 let users = {};
 // settings data
 let localSettingList = {    // local settings are set on the client side
+    username: null,
     autorepeatDelay: 167,
     autorepeatSpeed: 33,
-
 }
 let globalSettingList = {   // global settings are set for all players by the host
     forceSettings: false,
@@ -31,6 +33,9 @@ let globalSettingList = {   // global settings are set for all players by the ho
 }
 let localSettingHTML = `
 <p>Local Settings</p>
+    <label for="username">Username: </label>
+        <input type="text" required minlength="1" id="username"></input>
+    <br>
     <label for="autorepeatDelay">Key Autorepeat Delay (ms):</label> 
         <input type="number" required minlength="1" value=167 id="autorepeatDelay"></input>
     <br>
@@ -47,6 +52,10 @@ let globalSettingHTML = `
 `
 // settings menu methods
 let settingMethods = {
+    username: (name) => { 
+        session.usernameUpdate(name);
+        game.updateUsername(name); 
+    },
     autorepeatDelay: (ms) => { localSettingList.autorepeatDelay = ms },
     autorepeatSpeed: (ms) => { localSettingList.autorepeatSpeed = ms }
 }
@@ -104,10 +113,12 @@ const update = (playerId, board, username) => {
 
 // start the match
 const startMatch = () => {
-    utils.request({player: session.id, match: session.match, settings: {local: localSettingList, global: globalSettingList}}, window.location.origin + '/start')
-        .then((data) => {
-            // match started
-        });
+    utils.request({player: session.id, match: session.match, settings: {local: localSettingList, global: globalSettingList}}, window.location.origin + '/start');
+}
+
+// end match
+const endMatch = () => {
+    utils.request({ player: session.id, match: session.match }, window.location.origin + '/end');
 }
 
 // open settings menu
@@ -140,6 +151,8 @@ const setUISetting = (setting, value) => {
     const settingElement = document.getElementById(setting);
 
     switch(settingElement.type) {
+        case "text":
+            settingElement.value = value;
         case "number":
             settingElement.value = value;
             break;
@@ -153,6 +166,8 @@ const getUISetting = (setting) => {
     const settingElement = document.getElementById(setting);
 
     switch(settingElement.type) {
+        case "text":
+            return settingElement.value;
         case "number":
             return settingElement.value;
         case "checkbox":
@@ -161,6 +176,7 @@ const getUISetting = (setting) => {
 }
 
 const saveSettings = (event) => {
+    // keep form from refreshing page pt1
     event.preventDefault();
 
     for(let setting in localSettingList) {
@@ -176,7 +192,7 @@ const saveSettings = (event) => {
     setSettings();
     closeSettings();
 
-    // keep form from refreshing page
+    // keep form from refreshing page pt2
     return false;
 }
 
@@ -210,9 +226,13 @@ const newSettingsModal = () => {
         if(event.target == settingsModal)
             closeSettings();
     }
+
+    // settings elements that depend on server side data
+    localSettingList.username = session.username;
+    document.getElementById('username').value = session.username;
 }
 
-// give player host UI elements (start button)
+// give player host UI elements (start/end button)
 const setHostUi = () => {
     if(startButton) {
         startButton.remove();
@@ -223,6 +243,14 @@ const setHostUi = () => {
     startButton.textContent = 'Start';
     startButton.onclick = startMatch;
     rootDiv.appendChild(startButton);
+
+    endButton = document.createElement('button');
+    endButton.textContent = 'End';
+    endButton.onclick = endMatch;
+    rootDiv.appendChild(endButton);
+
+    controlsDiv.appendChild(startButton);
+    controlsDiv.appendChild(endButton);
 }
 
 // clear and repopulate opponent boards display
@@ -237,7 +265,6 @@ const initBoards = (players) => {
         update(playerId, board, players[playerId].username);
     }
 
-
     if(session.isHost)
         setHostUi();
 
@@ -247,6 +274,8 @@ const initBoards = (players) => {
     settingsButton.textContent = 'Settings';
     settingsButton.onclick = openSettings;
     rootDiv.appendChild(settingsButton);
+
+    controlsDiv.appendChild(settingsButton);
 }
 
 // when you are the only player left in a match you become the host
@@ -303,8 +332,10 @@ export const events = {
     },
     start: async (data) => {
         // sync settings to host
-        if(data.global.forceSettings)
-            localSettingList = data.local;
+        if(data.global.forceSettings) {
+            localSettingList.autorepeatDelay = data.local.autorepeatDelay;
+            localSettingList.autorepeatSpeed = data.local.autorepeatSpeed;
+        }
 
         globalSettingList = data.global;
         setSettings();
@@ -312,6 +343,9 @@ export const events = {
         // start match
         await game.start();
         loop.start(1000, tickMethod);
+    },
+    end: (data) => {
+        loop.stop();
     }
 }
 
@@ -322,10 +356,16 @@ export const init = (initSession, initGame) => {
 
     // setup gui elements
     rootDiv = document.getElementById('root');
-    boardsDiv = document.createElement('div');
+    let bodyDiv = document.getElementsByTagName('body')[0];
 
+    boardsDiv = document.createElement('div');
     boardsDiv.id = 'boards';
-    rootDiv.appendChild(boardsDiv);
+
+    controlsDiv = document.createElement('div');
+    controlsDiv.id = 'controls';
+
+    bodyDiv.appendChild(boardsDiv);
+    rootDiv.appendChild(controlsDiv);
 }
 
 export const getViews = () => {
