@@ -87,7 +87,7 @@ const nextPiece = () => {
     resetPiece();
 
     // go to the next piece in bag
-    if(state.bag.length <= 7) {
+    if(state.bag.length <= 21) {
         session.requestBag()
             .then(nextBag => {
                 state.bag = state.bag.concat(nextBag);
@@ -329,7 +329,7 @@ export const start = async (settings) => {
     fpsScore.textContent = formatFps();
 
     // request bags until there's enough pieces
-    while(state.bag.length < 14) {
+    while(state.bag.length < 28) {
         await session.requestBag()
             .then(nextBag => {
                 state.bag = state.bag.concat(nextBag);
