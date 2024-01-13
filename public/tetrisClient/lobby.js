@@ -14,13 +14,15 @@ let boardsDiv = null;
 let settingsModal = null;
 // buttons
 let startButton = null;
-let endButton = null;
+let pauseButton = null;
 let settingsButton = null;
 // other players
 let opponents = {};
 let canvases = {};
 let boards = {};
 let users = {};
+// misc data
+let pauseStart = Date.now();
 // settings data
 let localSettingList = {    // local settings are set on the client side
     username: null,
@@ -30,6 +32,9 @@ let localSettingList = {    // local settings are set on the client side
 let globalSettingList = {   // global settings are set for all players by the host
     forceSettings: false,
     sevenBag: true,
+    gravity: 5,
+    softDrop: 80,
+    lockDelay: 500,
 }
 let localSettingHTML = `
 <p>Local Settings</p>
@@ -49,6 +54,15 @@ let globalSettingHTML = `
     <br>
     <label for="sevenBag">7-Bag RNG:</label>
         <input type="checkbox" id="sevenBag" checked="true">
+    <br>
+    <label for="gravity">Gravity cells per second</label>
+        <input type="number" required minlength="1" value=5 id="gravity"></input>
+    <br>
+    <label for="softDrop">Soft Drop cells per second</label>
+        <input type="number" required minlength="1" value=80 id="softDrop"></input>
+    <br>
+    <label for="lockDelay">Lock delay time in ms</label>
+        <input type="number" required minlength="1" value=500 id="lockDelay"></input>
 `
 // settings menu methods
 let settingMethods = {
@@ -57,7 +71,10 @@ let settingMethods = {
         game.updateUsername(name); 
     },
     autorepeatDelay: (ms) => { localSettingList.autorepeatDelay = ms },
-    autorepeatSpeed: (ms) => { localSettingList.autorepeatSpeed = ms }
+    autorepeatSpeed: (ms) => { localSettingList.autorepeatSpeed = ms },
+    gravity: (n) => { globalSettingList.gravity = n },
+    softDrop: (n) => { globalSettingList.softDrop = n },
+    lockDelay: (ms) => { globalSettingList.lockDelay = ms },
 }
 
 // remove board when a player leaves
@@ -116,9 +133,9 @@ const startMatch = () => {
     utils.request({player: session.id, match: session.match, settings: {local: localSettingList, global: globalSettingList}}, window.location.origin + '/start');
 }
 
-// end match
-const endMatch = () => {
-    utils.request({ player: session.id, match: session.match }, window.location.origin + '/end');
+// pause match
+const pauseMatch = () => {
+    utils.request({ player: session.id, match: session.match }, window.location.origin + '/pause');
 }
 
 // open settings menu
@@ -240,17 +257,17 @@ const setHostUi = () => {
     }
     
     startButton = document.createElement('button');
-    startButton.textContent = 'Start';
+    startButton.textContent = 'New Game';
     startButton.onclick = startMatch;
     rootDiv.appendChild(startButton);
 
-    endButton = document.createElement('button');
-    endButton.textContent = 'End';
-    endButton.onclick = endMatch;
-    rootDiv.appendChild(endButton);
+    pauseButton = document.createElement('button');
+    pauseButton.textContent = 'Pause';
+    pauseButton.onclick = pauseMatch;
+    rootDiv.appendChild(pauseButton);
 
     controlsDiv.appendChild(startButton);
-    controlsDiv.appendChild(endButton);
+    controlsDiv.appendChild(pauseButton);
 }
 
 // clear and repopulate opponent boards display
@@ -341,8 +358,24 @@ export const events = {
         setSettings();
 
         // start match
-        await game.start();
+        await game.start(
+            {
+                levelGravity: 1000 / globalSettingList.gravity,
+                softDropGravity: 1000 / globalSettingList.softDrop,
+                lockDelay: globalSettingList.lockDelay
+            }
+        );
         loop.start(1000, tickMethod);
+    },
+    pause: (data) => {
+        if(data.paused) {
+            loop.stop();
+            pauseStart = Date.now();
+        }
+        else {
+            game.resync(Date.now() - pauseStart);
+            loop.restart();
+        }
     },
     end: (data) => {
         loop.stop();

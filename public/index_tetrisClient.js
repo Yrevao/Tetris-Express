@@ -9,6 +9,7 @@ const session = require('./tetrisClient/session.js');
 const setEvents = (session) => {
     session.bindEvent('update', lobby.events.update);
     session.bindEvent('start', lobby.events.start);
+    session.bindEvent('pause', lobby.events.pause);
     session.bindEvent('reset', lobby.events.end);
 }
 

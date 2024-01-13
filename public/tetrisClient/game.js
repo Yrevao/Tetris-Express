@@ -17,8 +17,7 @@ let timeScore = null;
 let fpsScore = null;
 
 // gameplay settings
-let settings = {
-    gravityTime: null,          // how long the piece in play takes to move down one cell in ms
+export let settings = {
     levelGravity: 1000 / 5,     // fall speed of current level
     softDropGravity: 1000 / 80, // fall speed of soft drop
     lockDelay: 500              // how long a piece takes to lock after landing in ms
@@ -33,6 +32,7 @@ let state = {
     playX: 3,                                   // x position of piece in play
     playY: 18,                                  // y position
     playRot: 0,                                 // rotation
+    gravityTime: null,                          // how long the piece in play takes to move down one cell in ms
     playLandTime: -1,                           // Date.now() of when the piece in play landed 
     playLastGravity: Date.now(),                // Date.now() of when the piece in play last moved down a cell
     loss: false,                                // indicates that the game has been lost
@@ -45,14 +45,14 @@ let state = {
 }
 
 // reset state to starting defaults
-const resetState = () => {
+const resetState = () => {time
     state.board = gameUtils.newGrid(boardW, boardH);
     state.bag = [];
-    state.hold = null;
     state.held = false;
     state.playX = 3;
     state.playY = 18;
     state.playRot = 0;
+    state.gravityTime = null;
     state.playLandTime = -1;
     state.playLastGravity = Date.now();
     state.loss = false;
@@ -180,7 +180,7 @@ const doGravity = () => {
     clearPlay(false);
 
     // how far to move a piece
-    let gravityDebt = Math.floor((Date.now() - state.playLastGravity) / settings.gravityTime);
+    let gravityDebt = Math.floor((Date.now() - state.playLastGravity) / state.gravityTime);
 
     // check if enought time has passed to move the piece down
     if(gravityDebt >= 1) {
@@ -278,10 +278,72 @@ const formatFps = () => {
     return fps.toFixed(1);
 }
 
+// event methods, controls and SocketIO events
+export const events = {
+    left: (k) => {
+        if(k.down)
+            move(-1, 0);
+    },
+    right: (k) => {
+        if(k.down)
+            move(1, 0);
+    },
+    rotLeft: (k) => {
+        if(k.down)    
+            move(0, 3);
+    },
+    rotRight: (k) => {
+        if(k.down)
+            move(0, 1);
+    },
+    rot180: (k) => {
+        if(!k.down)
+            return;
+        
+        move(0, 1);
+        move(0, 1);
+    },
+    softDrop: (k) => {
+        const oldTime = state.gravityTime;
+        state.gravityTime = k.down ? settings.softDropGravity : settings.levelGravity;
+        
+        // difference factor between the set gravity and previous gravity
+        const timeCoef = state.gravityTime / oldTime;
+        // scaled time since the last gravity tick
+        const gravityTimeScaled = (Date.now() - state.playLastGravity) * timeCoef;
+        // scaled time at the last gravity tick
+        state.playLastGravity = Date.now() - gravityTimeScaled;
+    },
+    hardDrop: (k) => {
+        if(!k.down)
+            return;
+
+        state.playY = dropPlay();
+        clearPlay(false);
+        lockPlay();
+    },
+    hold: (k) => {
+        if(!k.down || state.held)
+            return;
+
+        if(state.hold == null) {
+            state.hold = state.bag[0];
+            nextPiece();
+            state.held = true;
+        }
+        else {
+            const buffer = state.hold;
+            state.hold = state.bag[0];
+            state.bag[0] = buffer;
+            resetPiece();
+            state.held = true;
+        }
+    }
+}
+
 // init objects
 export const init = (initSession) => {
     session = initSession;
-    settings.gravityTime = settings.levelGravity;
 
     // setup canvases
     let gameBoardsDiv = document.createElement('div');
@@ -319,7 +381,7 @@ export const init = (initSession) => {
 }
 
 // prepare game for tick cycle
-export const start = async (settings) => {
+export const start = async (startSettings) => {
     resetState();
 
     locksScore.textContent = 0;
@@ -328,75 +390,15 @@ export const start = async (settings) => {
     timeScore.textContent = formatPlayTime();
     fpsScore.textContent = formatFps();
 
+    settings = startSettings;
+    state.gravityTime = settings.levelGravity;
+
     // request bags until there's enough pieces
     while(state.bag.length < 28) {
         await session.requestBag()
             .then(nextBag => {
                 state.bag = state.bag.concat(nextBag);
             });
-    }
-}
-
-// event methods, controls and SocketIO events
-export const events = {
-    left: (k) => {
-        if(k.down)
-            move(-1, 0);
-    },
-    right: (k) => {
-        if(k.down)
-            move(1, 0);
-    },
-    rotLeft: (k) => {
-        if(k.down)    
-            move(0, 3);
-    },
-    rotRight: (k) => {
-        if(k.down)
-            move(0, 1);
-    },
-    rot180: (k) => {
-        if(!k.down)
-            return;
-        
-        move(0, 1);
-        move(0, 1);
-    },
-    softDrop: (k) => {
-        const oldTime = settings.gravityTime;
-        settings.gravityTime = k.down ? settings.softDropGravity : settings.levelGravity;
-        
-        // difference factor between the set gravity and previous gravity
-        const timeCoef = settings.gravityTime / oldTime;
-        // scaled time since the last gravity tick
-        const gravityTimeScaled = (Date.now() - state.playLastGravity) * timeCoef;
-        // scaled time at the last gravity tick
-        state.playLastGravity = Date.now() - gravityTimeScaled;
-    },
-    hardDrop: (k) => {
-        if(!k.down)
-            return;
-
-        state.playY = dropPlay();
-        clearPlay(false);
-        lockPlay();
-    },
-    hold: (k) => {
-        if(!k.down || state.held)
-            return;
-
-        if(state.hold == null) {
-            state.hold = state.bag[0];
-            nextPiece();
-            state.held = true;
-        }
-        else {
-            const buffer = state.hold;
-            state.hold = state.bag[0];
-            state.bag[0] = buffer;
-            resetPiece();
-            state.held = true;
-        }
     }
 }
 
@@ -433,4 +435,11 @@ export const getViews = () => {
 
 export const updateUsername = (name) => {
     usernameScore.textContent = name;
+}
+
+// when the game is unpaused some time has passed and all the state timers need to be updated
+export const resync = (pauseTime) => {
+    state.playLastGravity += pauseTime;
+    state.start += pauseTime;
+    state.frameTimer += pauseTime;
 }

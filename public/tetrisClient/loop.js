@@ -1,4 +1,5 @@
 const gameUtils = require('./gameUtils.js');
+let tickrate = null
 let loop = false;
 let tickMethod = null;
 
@@ -18,7 +19,13 @@ const updateLoop = (ticksPerSecond) => {
 export const start = (ticksPerSecond, initTickMethod) => {
     loop = true;
     tickMethod = initTickMethod;
+    tickrate = ticksPerSecond;
     updateLoop(ticksPerSecond);
+}
+
+export const restart = () => {
+    loop = true;
+    updateLoop(tickrate);
 }
 
 export const stop = () => {
