@@ -8,21 +8,25 @@ const input = require('./input.js');
 let session = null;
 let game = null;
 // page separation
-let rootDiv = null;
-let controlsDiv = null;
-let boardsDiv = null;
-let settingsModal = null;
+let divs = {
+    rootDiv: null,
+    controlsDiv: null,
+    boardsDiv: null,
+    settingsModal: null,
+}
 // buttons
-let startButton = null;
-let pauseButton = null;
-let settingsButton = null;
+let buttons = {
+    startButton: null,
+    pauseButton: null,
+    settingsButton: null,
+}
 // other players
-let opponents = {};
-let canvases = {};
-let boards = {};
-let users = {};
-// misc data
-let pauseStart = Date.now();
+let opponentState = {
+    opponents: {},
+    canvases: {},
+    boards: {},
+    users: {},
+}
 // settings data
 let localSettingList = {    // local settings are set on the client side
     username: null,
@@ -82,16 +86,25 @@ const leave = (playerId) => {
     let opponent = document.getElementById(`opponent-${playerId}`);
     opponent.remove();
 
-    delete opponents[playerId];
-    delete canvases[playerId];
-    delete boards[playerId];
-    delete users[playerId];
+    delete opponentState.opponents[playerId];
+    delete opponentState.canvases[playerId];
+    delete opponentState.boards[playerId];
+    delete opponentState.users[playerId];
+}
+
+// method run durring each game tick
+const tickMethod = () => {
+    input.checkKeys();
+    game.tick();
+
+    const views = game.getViews().concat(getViews());
+    gameUtils.updateViews(views);
 }
 
 // when another player joins add a board
 const join = (playerId, username) => {
     let opponentDiv = document.createElement('div');
-    boardsDiv.appendChild(opponentDiv);
+    divs.boardsDiv.appendChild(opponentDiv);
     opponentDiv.id = `opponent-${playerId}`;
 
     let nameplate = document.createElement('div');
@@ -99,59 +112,59 @@ const join = (playerId, username) => {
     nameplate.textContent = username;
     opponentDiv.appendChild(nameplate);
 
-    canvases[playerId] = draw.newPlayfieldCanvas(1000, 2000, '10vh', `board-${playerId}`, opponentDiv);
-    users[playerId] = username;
-    opponents[playerId] = opponentDiv;
+    opponentState.canvases[playerId] = draw.newPlayfieldCanvas(1000, 2000, '10vh', `board-${playerId}`, opponentDiv);
+    opponentState.users[playerId] = username;
+    opponentState.opponents[playerId] = opponentDiv;
 
-    let opponentArr = Object.keys(opponents);
+    let opponentArr = Object.keys(opponentState.opponents);
     opponentArr.sort((a, b) => {
         return a.localeCompare(b, "en");
     });
     opponentArr.forEach((id, i) => {
-        opponents[id].style.order = i;
+        opponentState.opponents[id].style.order = i;
     })
 }
 
 // update the displayed stats when another player places a piece or changes username
 const update = (playerId, board, username) => {
-    boards[playerId] = board;
+    opponentState.boards[playerId] = board;
 
     // update username if it's been changed
-    if(username != null && users[playerId] != null && users[playerId] != username) {
+    if(username != null && opponentState.users[playerId] != null && opponentState.users[playerId] != username) {
         let nameplate = document.getElementById(`nameplate-${playerId}`);
         nameplate.textContent = username;
 
-        users[playerId] = username;
+        opponentState.users[playerId] = username;
     }
 
-    if(!Object.keys(canvases).includes(playerId))
+    if(!Object.keys(opponentState.canvases).includes(playerId))
         join(playerId, username);
 }
 
 // start the match
 const startMatch = () => {
-    utils.request({player: session.id, match: session.match, settings: {local: localSettingList, global: globalSettingList}}, window.location.origin + '/start');
+    utils.request({player: session.id, settings: {local: localSettingList, global: globalSettingList}}, window.location.origin + '/start');
 }
 
 // pause match
 const pauseMatch = () => {
-    utils.request({ player: session.id, match: session.match }, window.location.origin + '/pause');
+    utils.request({ player: session.id }, window.location.origin + '/pause');
 }
 
 // open settings menu
 const openSettings = () => {
-    if(settingsModal == null)
+    if(divs.settingsModal == null)
         return;
 
     for(let setting in localSettingList) {
         setUISetting(setting, localSettingList[setting]);
     }
 
-    settingsModal.style.display = 'block';
+    divs.settingsModal.style.display = 'block';
 }
 
 const closeSettings = () => {
-    settingsModal.style.display = 'none';
+    divs.settingsModal.style.display = 'none';
 }
 
 const setSettings = () => {
@@ -215,8 +228,8 @@ const saveSettings = (event) => {
 
 // generate settings modal
 const newSettingsModal = () => {
-    settingsModal = document.createElement('div');
-    settingsModal.id = 'settingsModal';
+    divs.settingsModal = document.createElement('div');
+    divs.settingsModal.id = 'settingsModal';
 
     let menuDiv = document.createElement('div');
     menuDiv.id = 'settingsMenu';
@@ -233,14 +246,14 @@ const newSettingsModal = () => {
         </form>
     `;
 
-    settingsModal.appendChild(menuDiv);
-    rootDiv.appendChild(settingsModal);
+    divs.settingsModal.appendChild(menuDiv);
+    divs.rootDiv.appendChild(divs.settingsModal);
     document.getElementById('settingsForm').addEventListener('submit', saveSettings);
 
     // close the modal if the close button or if the page around the modal is clicked
     document.getElementsByClassName('close')[0].onclick = closeSettings;
     window.onclick = (event) => {
-        if(event.target == settingsModal)
+        if(event.target == divs.settingsModal)
             closeSettings();
     }
 
@@ -251,28 +264,30 @@ const newSettingsModal = () => {
 
 // give player host UI elements (start/end button)
 const setHostUi = () => {
-    if(startButton) {
-        startButton.remove();
-        settingsButton.remove();
+    if(buttons.startButton || buttons.settingsButton || buttons.pauseButton) {
+        buttons.startButton.remove();
+        buttons.settingsButton.remove();
+        buttons.pauseButton.remove();
     }
     
-    startButton = document.createElement('button');
-    startButton.textContent = 'New Game';
-    startButton.onclick = startMatch;
-    rootDiv.appendChild(startButton);
+    buttons.startButton = document.createElement('button');
+    buttons.startButton.textContent = 'New Game';
+    buttons.startButton.onclick = startMatch;
+    divs.rootDiv.appendChild(buttons.startButton);
 
-    pauseButton = document.createElement('button');
-    pauseButton.textContent = 'Pause';
-    pauseButton.onclick = pauseMatch;
-    rootDiv.appendChild(pauseButton);
+    buttons.pauseButton = document.createElement('button');
+    buttons.pauseButton.textContent = 'Pause';
+    buttons.pauseButton.onclick = pauseMatch;
+    divs.rootDiv.appendChild(buttons.pauseButton);
 
-    controlsDiv.appendChild(startButton);
-    controlsDiv.appendChild(pauseButton);
+    divs.controlsDiv.appendChild(buttons.startButton);
+    divs.controlsDiv.appendChild(buttons.pauseButton);
 }
 
 // clear and repopulate opponent boards display
-const initBoards = (players) => {
-    boardsDiv.innerHTML = '';
+const initUI = (players) => {
+    divs.boardsDiv.innerHTML = '';
+    divs.controlsDiv.innerHTML = '';
 
     for(let playerId in players) {
         if(playerId == session.id)
@@ -286,13 +301,18 @@ const initBoards = (players) => {
         setHostUi();
 
     // UI elements all players get
-    newSettingsModal();
-    settingsButton = document.createElement('button');
-    settingsButton.textContent = 'Settings';
-    settingsButton.onclick = openSettings;
-    rootDiv.appendChild(settingsButton);
 
-    controlsDiv.appendChild(settingsButton);
+    // reset gui elements to prevent duplicates
+    if(divs.settingsModal)
+        divs.settingsModal.remove();
+
+    newSettingsModal();
+    buttons.settingsButton = document.createElement('button');
+    buttons.settingsButton.textContent = 'Settings';
+    buttons.settingsButton.onclick = openSettings;
+    divs.rootDiv.appendChild(buttons.settingsButton);
+
+    divs.controlsDiv.appendChild(buttons.settingsButton);
 }
 
 // when you are the only player left in a match you become the host
@@ -313,14 +333,6 @@ const setBinds = () => {
     input.bindKey('c', game.events.hold, false);
 }
 
-const tickMethod = () => {
-    input.checkKeys();
-    game.tick();
-
-    const views = game.getViews().concat(getViews());
-    gameUtils.updateViews(views);
-}
-
 export const events = {
     update: (data) => {
         // update the opponent boards only if the update is for another player
@@ -331,7 +343,8 @@ export const events = {
 
         switch(data.flag) {
             case 'init':
-                initBoards(data.players);
+                loop.stop();
+                initUI(data.players);
                 break;
             case 'update':
                 update(data.player, data.board, data.username);
@@ -368,16 +381,15 @@ export const events = {
         loop.start(1000, tickMethod);
     },
     pause: (data) => {
-        if(data.paused) {
+        game.pause(data.paused);
+
+        if(data.paused)
             loop.stop();
-            pauseStart = Date.now();
-        }
-        else {
-            game.resync(Date.now() - pauseStart);
+        else
             loop.restart();
-        }
     },
     end: (data) => {
+        game.pause(true);
         loop.stop();
     }
 }
@@ -388,24 +400,29 @@ export const init = (initSession, initGame) => {
     setBinds();
 
     // setup gui elements
-    rootDiv = document.getElementById('root');
+    if(divs.boardsDiv && divs.controlsDiv) {
+        divs.boardsDiv.remove();
+        divs.controlsDiv.remove();
+    } 
+
+    divs.rootDiv = document.getElementById('root');
     let bodyDiv = document.getElementsByTagName('body')[0];
 
-    boardsDiv = document.createElement('div');
-    boardsDiv.id = 'boards';
+    divs.boardsDiv = document.createElement('div');
+    divs.boardsDiv.id = 'boards';
 
-    controlsDiv = document.createElement('div');
-    controlsDiv.id = 'controls';
+    divs.controlsDiv = document.createElement('div');
+    divs.controlsDiv.id = 'controls';
 
-    bodyDiv.appendChild(boardsDiv);
-    rootDiv.appendChild(controlsDiv);
+    bodyDiv.appendChild(divs.boardsDiv);
+    divs.rootDiv.appendChild(divs.controlsDiv);
 }
 
 export const getViews = () => {
     let views = [];
 
-    for(let id in boards)
-        views.push(draw.newView(10, 20, 0, 20, boards[id], canvases[id]));
+    for(let id in opponentState.boards)
+        views.push(draw.newView(10, 20, 0, 20, opponentState.boards[id], opponentState.canvases[id]));
 
     return views;
 }

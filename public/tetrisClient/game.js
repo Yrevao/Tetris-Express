@@ -1,31 +1,33 @@
 const gameUtils = require('./gameUtils.js');
 const blockStore = require('./blockStore.js');
 const draw = require('./draw.js');
-
-// view
-const boardW = 10;
-const boardH = 40;
+// shared objects
 let session = null;
-let boardCanvas = null;
-let holdCanvas = null;
-let nextCanvas = null;
-let usernameScore = null;
-let locksScore = null;
-let linesScore = null;
-let ppsScore = null;
-let timeScore = null;
-let fpsScore = null;
-
+// canvas config and data
+let view = {
+    boardW: 10,
+    boardH: 40,
+    boardCanvas: null,
+    holdCanvas: null,
+    nextCanvas: null,
+}
+// scoreboard data
+let scores = {
+    usernameScore: null,
+    locksScore: null,
+    linesScore: null,
+    ppsScore: null,
+    timeScore: null,
+}
 // gameplay settings
-export let settings = {
+let settings = {
     levelGravity: 1000 / 5,     // fall speed of current level
     softDropGravity: 1000 / 80, // fall speed of soft drop
     lockDelay: 500              // how long a piece takes to lock after landing in ms
 }
-
 // game state
 let state = {
-    board: gameUtils.newGrid(boardW, boardH),   // game board grid
+    board: gameUtils.newGrid(view.boardW, view.boardH),   // game board grid
     bag: [],                                    // main piece bag
     hold: null,                                 // held piece
     held: false,                                // indicates that a piece has been held durring the current play
@@ -40,14 +42,15 @@ let state = {
     lines: 0,                                   // total lines cleared
     pps: 0,                                     // pieces per second
     start: Date.now(),                          // Date.now() of when the game started
-    frames: 0,                                  // frames per second
-    frameTimer: Date.now(),                     // when the current second started
+    paused: false,                              // if the game is running or not
+    pauseTime: Date.now(),                      // time when the game was paused
 }
 
 // reset state to starting defaults
-const resetState = () => {time
-    state.board = gameUtils.newGrid(boardW, boardH);
+const resetState = () => {
+    state.board = gameUtils.newGrid(view.boardW, view.boardH);
     state.bag = [];
+    state.hold = null;
     state.held = false;
     state.playX = 3;
     state.playY = 18;
@@ -60,8 +63,8 @@ const resetState = () => {time
     state.lines = 0;
     state.pps = 0;
     state.start = Date.now();
-    state.frames = 0;
-    state.frameTimer = Date.now();
+    state.paused = false;
+    state.pauseTime = Date.now();
 }
 
 // get the current piece's grid
@@ -125,7 +128,7 @@ const clearLines = () => {
         // move everything above the current row down one if the row is full
         if(rowFull) {
             state.lines++;
-            linesScore.textContent = state.lines;
+            scores.linesScore.textContent = state.lines;
             for(let r = row; r > 0; r--) {
                 for(let c = 0; c < state.board.length; c++) {
                     state.board[c][r] = structuredClone(state.board[c][r - 1]);
@@ -137,7 +140,7 @@ const clearLines = () => {
 
 // find the lowest y value the in play piece can drop to without hitting anything  
 const dropPlay = () => {
-    for(let y = state.playY; y < boardH; y++) {
+    for(let y = state.playY; y < view.boardH; y++) {
         if(gameUtils.checkBoxColl(state.playX, y, state.board, getPiece()))
             return y - 1;
     }
@@ -158,15 +161,15 @@ const lockPlay = () => {
     clearLines();
 
     // check for loss
-    if(gameUtils.checkBoxColl(0, 0, state.board, gameUtils.newGrid(boardW, 20, gameUtils.newBox(false))))
+    if(gameUtils.checkBoxColl(0, 0, state.board, gameUtils.newGrid(view.boardW, 20, gameUtils.newBox(false))))
         onLoss();
     else {
         // update total locked pieces and plays per second
         state.locks++;
-        locksScore.textContent = state.locks;
+        scores.locksScore.textContent = state.locks;
 
         const duration = Date.now() - state.start;
-        ppsScore.textContent = (state.locks / (duration / 1000)).toFixed(2);
+        scores.ppsScore.textContent = (state.locks / (duration / 1000)).toFixed(2);
 
         // spawn next piece
         nextPiece();
@@ -251,31 +254,21 @@ const move = (dx, drot) => {
 }
 
 // return min:sec:ms of how long the game has been running
-const formatPlayTime = () => {
-    const duration = Date.now() - state.start;
+const formatPlayTime = (time) => {
+    let duration = time;
+    if(time == null)
+        duration = Date.now() - state.start;
+
     const sec = Math.floor(duration / 1000);
     const min = Math.floor(sec / 60);
 
     return `${min}:${sec % 60}:${duration % 1000}`;
 }
 
-// return frames per second
-const formatFps = () => {
-    // how many seconds have passed since the last fps check
-    const second = (Date.now() - state.frameTimer) / 1000;
-    // frames per second average since the last time fps was checked
-    const fps = state.frames / second;
-
-    // how much second has passed since a full second after the last fps check
-    const secondDiff = second - 1; 
-    if(secondDiff > 0) {
-        // adjust frame timer so that {const second} is widthin 1 second
-        state.frameTimer += secondDiff * 1000;
-        // adjust frame count to 1 seconds worth of frames
-        state.frames -= fps / (1 / secondDiff);
-    }
-
-    return fps.toFixed(1);
+// when the game is unpaused some time has passed and all the state timers need to be updated
+const resync = (pauseTime) => {
+    state.playLastGravity += pauseTime;
+    state.start += pauseTime;
 }
 
 // event methods, controls and SocketIO events
@@ -350,9 +343,9 @@ export const init = (initSession) => {
     gameBoardsDiv.id = 'game';
     document.getElementById('root').appendChild(gameBoardsDiv);
 
-    holdCanvas = draw.newPlayfieldCanvas(400, 200, '4vh', 'holdCanvas', gameBoardsDiv);
-    boardCanvas = draw.newPlayfieldCanvas(1000, 2000, '40vh', 'boardCanvas', gameBoardsDiv);
-    nextCanvas = draw.newPlayfieldCanvas(400, 1400, '28vh', 'nextCanvas', gameBoardsDiv);
+    view.holdCanvas = draw.newPlayfieldCanvas(400, 200, '4vh', 'holdCanvas', gameBoardsDiv);
+    view.boardCanvas = draw.newPlayfieldCanvas(1000, 2000, '40vh', 'boardCanvas', gameBoardsDiv);
+    view.nextCanvas = draw.newPlayfieldCanvas(400, 1400, '28vh', 'nextCanvas', gameBoardsDiv);
 
     // setup score display
     const scoreBoard = document.createElement('div');
@@ -366,51 +359,48 @@ export const init = (initSession) => {
         <br>
         <span>PPS </span><span id="pps">${state.pps}</span>
         <br>
-        <span>Time </span><span id="time">${formatPlayTime()}</span>
-        <br>
-        <span>FPS </span><span id="fps"><${formatFps()}</span>
+        <span>Time </span><span id="time">${formatPlayTime(0)}</span>
     `
     root.appendChild(scoreBoard);
 
-    usernameScore = document.getElementById('usernameScore');
-    locksScore = document.getElementById('locks');
-    linesScore = document.getElementById('lines');
-    ppsScore = document.getElementById('pps');
-    timeScore = document.getElementById('time');
-    fpsScore = document.getElementById('fps');
+    scores.usernameScore = document.getElementById('usernameScore');
+    scores.locksScore = document.getElementById('locks');
+    scores.linesScore = document.getElementById('lines');
+    scores.ppsScore = document.getElementById('pps');
+    scores.timeScore = document.getElementById('time');
 }
 
 // prepare game for tick cycle
 export const start = async (startSettings) => {
-    resetState();
+    // request bags until there's enough pieces
+    let initBag = []
+    while(initBag.length < 28) {
+        await session.requestBag()
+            .then(nextBag => {
+                initBag = initBag.concat(nextBag);
+            });
+    }
 
-    locksScore.textContent = 0;
-    linesScore.textContent = 0;
-    ppsScore.textContent = 0;
-    timeScore.textContent = formatPlayTime();
-    fpsScore.textContent = formatFps();
+    // reset state after requesting bags so that all Date.now() properties are set without latency
+    resetState();
+    state.bag = initBag;
+
+    scores.locksScore.textContent = 0;
+    scores.linesScore.textContent = 0;
+    scores.ppsScore.textContent = 0;
+    scores.timeScore.textContent = formatPlayTime(0);
 
     settings = startSettings;
     state.gravityTime = settings.levelGravity;
-
-    // request bags until there's enough pieces
-    while(state.bag.length < 28) {
-        await session.requestBag()
-            .then(nextBag => {
-                state.bag = state.bag.concat(nextBag);
-            });
-    }
 }
 
 // run one update cycle
 export const tick = () => {
-    // update board if the game hasn't been lost
-    if(!state.loss) {
+    // update board if the game hasn't been lost or is paused
+    if(!state.loss && !state.paused) {
         doGravity();
         placeGhost();
-        state.frames++;
-        fpsScore.textContent = formatFps();
-        timeScore.textContent = formatPlayTime();
+        scores.timeScore.textContent = formatPlayTime();
     }
 }
 
@@ -426,20 +416,24 @@ export const getViews = () => {
         gameUtils.stamp(0, i*3, nextGrid, blockStore.idToLetter[state.bag[1+i]](0));
 
     // define views
-    const gameView = draw.newView(10, 20, 0, 20, state.board, boardCanvas);
-    const holdView = draw.newView(4, 2, 0, 0, holdGrid, holdCanvas);
-    const nextView = draw.newView(4, 14, 0, 0, nextGrid, nextCanvas);
+    const gameView = draw.newView(10, 20, 0, 20, state.board, view.boardCanvas);
+    const holdView = draw.newView(4, 2, 0, 0, holdGrid, view.holdCanvas);
+    const nextView = draw.newView(4, 14, 0, 0, nextGrid, view.nextCanvas);
 
     return [gameView, holdView, nextView];
 }
 
 export const updateUsername = (name) => {
-    usernameScore.textContent = name;
+    scores.usernameScore.textContent = name;
 }
 
-// when the game is unpaused some time has passed and all the state timers need to be updated
-export const resync = (pauseTime) => {
-    state.playLastGravity += pauseTime;
-    state.start += pauseTime;
-    state.frameTimer += pauseTime;
+export const pause = (paused) => {
+    state.paused = paused;
+
+    if(paused)
+        state.pauseTime = Date.now();
+    else
+        resync(Date.now() - state.pauseTime);
+
+    console.log(Date.now() - state.pauseTime);
 }

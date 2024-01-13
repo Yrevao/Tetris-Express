@@ -107,5 +107,6 @@ document.addEventListener('keydown', (event) => {
 });
 
 document.addEventListener('keyup', (event) => {
+    event.preventDefault();
     keyAction(event.key, false);
 });

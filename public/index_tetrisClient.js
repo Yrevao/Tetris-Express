@@ -6,11 +6,14 @@ const lobby = require('./tetrisClient/lobby.js');
 const session = require('./tetrisClient/session.js');
 
 // set SocketIO event methods
-const setEvents = (session) => {
+let setEvents = (session) => {
     session.bindEvent('update', lobby.events.update);
     session.bindEvent('start', lobby.events.start);
     session.bindEvent('pause', lobby.events.pause);
     session.bindEvent('reset', lobby.events.end);
+
+    // this is a single use method
+    setEvents = () => {};
 }
 
 // generate HTML elements for tetris gameplay and start match setup
