@@ -19,3 +19,19 @@ export const request = (data, url, get) => {
             });
     });
 }
+
+// create button and add it as a child to another DOM element
+export const newButton = (text, method, id, parentNode) => {
+    let oldButton = document.getElementById(id);
+    if(oldButton)
+        oldButton.remove();
+
+    let button = document.createElement('button');
+
+    button.id = id;
+    button.textContent = text;
+    button.onclick = method;
+    parentNode.appendChild(button);
+
+    return button;
+}

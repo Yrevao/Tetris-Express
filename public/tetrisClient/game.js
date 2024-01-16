@@ -434,6 +434,4 @@ export const pause = (paused) => {
         state.pauseTime = Date.now();
     else
         resync(Date.now() - state.pauseTime);
-
-    console.log(Date.now() - state.pauseTime);
 }
