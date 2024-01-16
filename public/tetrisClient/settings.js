@@ -9,17 +9,27 @@ let localSettingList = {    // local settings are set on the client side
     autorepeatDelay: 167,
     autorepeatSpeed: 33,
 }
+let controlSettingList = {
+    moveLeft: 'ArrowLeft',
+    moveRight: 'ArrowRight',
+    rotLeft: 'z',
+    rotRight: 'ArrowUp',
+    rot180: 'a',
+    softDrop: 'ArrowDown',
+    hardDrop: ' ',
+    hold: 'c',
+}
 let globalSettingList = {   // global settings are set for all players by the host
     forceSettings: false,
     sevenBag: true,
     gravity: 5,
-    softDrop: 80,
+    softDropSpeed: 80,
     lockDelay: 500,
 }
 
 // settings ui html
 let localSettingHTML = `
-<p>Local Settings</p>
+<p class="category">Local Settings</p>
     <label for="usernameSetting">Username: </label>
         <input type="text" required minlength="1" id="usernameSetting"></input>
     <br>
@@ -28,11 +38,35 @@ let localSettingHTML = `
     <br>
     <label for="autorepeatSpeed">Key Autorepeat Speed (ms):</label> 
         <input type="number" required minlength="1" min="1" value=33 id="autorepeatSpeed"></input>
-<p>Controls</p>
-    <label for="moveLeft">Move Left:</label>
 `;
+let controlSettingHTML = `
+<p class="category">Controls</p>
+    <label for="moveLeft">Move Left:</label>
+        <input type="text" value="ArrowLeft" id="moveLeft"></input>
+    <br>
+    <label for="moveRight">Move Right:</label>
+        <input type="text" value="ArrowRight" id="moveRight"></input>
+    <br>
+    <label for="rotLeft">Rotate Left:</label>
+        <input type="text" value="z" id="rotLeft"></input>
+    <br>
+    <label for="rotRight">Rotate Right:</label>
+        <input type="text" value="ArrowUp" id="rotRight"></input>
+    <br>
+    <label for="rot180">Rotate 180:</label>
+        <input type="text" value="a" id="rot180"></input>
+    <br>
+    <label for="softDrop">Soft Drop:</label>
+        <input type="text" value="ArrowDown" id="softDrop"></input>
+    <br>
+    <label for="hardDrop">Hard Drop:</label>
+        <input type="text" value=" " id="hardDrop"></input>
+    <br>
+    <label for="hold">Hold:</label>
+        <input type="text" value="c" id="hold"></input>
+`
 let globalSettingHTML = `
-<p>Global Settings</p>
+<p class="category">Global Settings</p>
     <label for="forceSettings">Enforce Local Settings</label>
         <input type="checkbox" id="forceSettings">
     <br>
@@ -42,15 +76,16 @@ let globalSettingHTML = `
     <label for="gravity">Gravity cells per second</label>
         <input type="number" required minlength="1" value=5 id="gravity"></input>
     <br>
-    <label for="softDrop">Soft Drop cells per second</label>
-        <input type="number" required minlength="1" value=80 id="softDrop"></input>
+    <label for="softDropSpeed">Soft Drop cells per second</label>
+        <input type="number" required minlength="1" value=80 id="softDropSpeed"></input>
     <br>
     <label for="lockDelay">Lock delay time in ms</label>
         <input type="number" required minlength="1" value=500 id="lockDelay"></input>
 `
 
 // settings menu methods
-let settingMethods = {}
+let settingMethods = {};
+let controlSettingMethods = {};
 
 const getUISetting = (setting) => {
     const settingElement = document.getElementById(setting);
@@ -109,6 +144,7 @@ const saveSettings = (event) => {
 
 // save settings and run relevant methods
 const setSettings = () => {
+    // set general settings
     for(let setting in localSettingList) {
         let value = localSettingList[setting];
         let method = settingMethods[setting];
@@ -117,7 +153,26 @@ const setSettings = () => {
             method(value);
     }
 
+    // set controls
+    for(let control in controlSettingList) {
+        let value = controlSettingList[control];
+        controlSettingMethods[control](value);
+    }
+
+    // final method that depends on multiple settings
     settingMethods.final(localSettingList.autorepeatDelay, localSettingList.autorepeatSpeed);
+}
+
+// set events for the controls settings
+const setControlsEvents = () => {
+    for(let setting in controlSettingList) {
+        let control = document.getElementById(setting);
+
+        control.addEventListener('keyup', (event) => {
+            control.value = event.key;
+            controlSettingList[setting] = event.key;
+        });
+    }
 }
 
 // generate settings modal
@@ -136,9 +191,11 @@ const newSettingsModal = () => {
         <form id="settingsForm">
             ${localSettingHTML}
         <br>
+            ${controlSettingHTML}
+        <br>
             ${isHost ? globalSettingHTML : '<i>You must be host to change global settings</i>'}
         <br>
-        <input type="submit" value="Save">
+        <input class="buttons" type="submit" value="Save">
         </form>
     `;
 
@@ -152,6 +209,8 @@ const newSettingsModal = () => {
         if(event.target == settingsModal)
             closeSettings();
     }
+
+    setControlsEvents();
 }
 
 // open settings menu
@@ -187,14 +246,17 @@ export const applySettings = (server) => {
 
     return {
         levelGravity: 1000 / globalSettingList.gravity,
-        softDropGravity: 1000 / globalSettingList.softDrop,
+        softDropGravity: 1000 / globalSettingList.softDropSpeed,
         lockDelay: globalSettingList.lockDelay
     }
 }
 
 // set setting method
-export const bindSetting = (setting, method) => {
-    settingMethods[setting] = method;
+export const bindSetting = (setting, method, control) => {
+    if(control)
+        controlSettingMethods[setting] = method;
+    else
+        settingMethods[setting] = method;
 }
 
 // settings elements that depend on server side data

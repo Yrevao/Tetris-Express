@@ -28,6 +28,7 @@ export const newButton = (text, method, id, parentNode) => {
 
     let button = document.createElement('button');
 
+    button.className = 'buttons';
     button.id = id;
     button.textContent = text;
     button.onclick = method;

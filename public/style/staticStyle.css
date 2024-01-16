@@ -1,14 +1,22 @@
 body {
 	text-align: center;
 	background-color: darkgray;
+	font-family: Arial, Helvetica, sans-serif;
 }
 
 canvas {
 	background-color: black;
 }
 
+input {
+	background-color: #eee;
+	border-radius: 6px;
+	border-style: outset;
+}
+
 #root {
 	display: inline-flex;
+	align-items: center;
 	flex-direction: column;
 }
 
@@ -31,15 +39,32 @@ canvas {
 
 #controls {
 	order: 1;
+	margin-top: 10px;
 }
 
 #scoreboard {
+	background-color: lightgray;
+	border-color: black;
 	order: 2;
+	width: 200px;
+	border-style: outset;
+	border-radius: 12px;
+	margin-top: 10px;
+	font-weight: bold;
 }
 
 #boards {
 	float: right;
 	display: grid;
+}
+
+.buttons {
+	background-color: lightgray;
+	border-color: black;
+	border-radius: 12px;
+	padding: 12px;
+	font-size: 16px;
+	font-weight: bold;
 }
 
 #settingsModal {
@@ -60,6 +85,15 @@ canvas {
 	margin: auto;
 	padding: 10px;
 	width: 30%;
+
+	background-color: lightgray;
+	border-color: black;
+	border-style: outset;
+	border-radius: 12px;
+}
+
+.category {
+	font-weight: bold;
 }
 
 .close {

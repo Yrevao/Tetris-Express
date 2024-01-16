@@ -131,22 +131,19 @@ const becomeHost = () => {
     setHostUi();
 }
 
-// set keybindings
-const setInputBinds = () => {
-    input.bindKey('ArrowLeft', game.events.left, true);
-    input.bindKey('ArrowRight', game.events.right, true);
-    input.bindKey('z', game.events.rotLeft, false);
-    input.bindKey('ArrowUp', game.events.rotRight, false);
-    input.bindKey('a', game.events.rot180, false);
-    input.bindKey('ArrowDown', game.events.softDrop, false);
-    input.bindKey(' ', game.events.hardDrop, false);
-    input.bindKey('c', game.events.hold, false);
-}
-
 // set settings methods
 const setSettingBinds = () => {
-    settings.bindSetting('usernameSetting', events.settingUsername);
-    settings.bindSetting('final', events.settingRollover);
+    settings.bindSetting('usernameSetting', events.settingUsername, false);
+    settings.bindSetting('final', events.settingRollover, false);
+
+    settings.bindSetting('moveLeft', (key) => input.bindKey(key, game.events.left, true), true);
+    settings.bindSetting('moveRight', (key) => input.bindKey(key, game.events.right, true), true);
+    settings.bindSetting('rotLeft', (key) => input.bindKey(key, game.events.rotLeft, false), true);
+    settings.bindSetting('rotRight', (key) => input.bindKey(key, game.events.rotRight, false), true);
+    settings.bindSetting('rot180', (key) => input.bindKey(key, game.events.rot180, false), true);
+    settings.bindSetting('softDrop', (key) => input.bindKey(key, game.events.softDrop, false), true);
+    settings.bindSetting('hardDrop', (key) => input.bindKey(key, game.events.hardDrop, false), true);
+    settings.bindSetting('hold', (key) => input.bindKey(key, game.events.hold, false), true);
 }
 
 export const events = {
@@ -207,7 +204,6 @@ export const events = {
 export const init = (initSession, initGame) => {
     session = initSession;
     game = initGame;
-    setInputBinds();
     setSettingBinds();
 
     // setup gui elements
