@@ -180,15 +180,19 @@ const setControlsEvents = () => {
 const setCookieSettings = () => {
     let cookieSettings = {};
 
+    // set cookie object's properties to settings
     cookieSettings['local'] = localSettingList;
+    cookieSettings['control'] = controlSettingList;
     if(isHost)
         cookieSettings['global'] = globalSettingList;
 
+    // save cookie as JSON string
     document.cookie = `settings=${JSON.stringify(cookieSettings)}`
 }
 
 // read cookie
 const getCookieSettings = () => {
+    // extract cookie
     const cookieName = 'settings'
     let c = document.cookie.split(';').find( item => item.trim().startsWith(`${cookieName}=`) );
 
@@ -196,9 +200,12 @@ const getCookieSettings = () => {
     if(!c)
         return false;
 
+    // convert the JSON cookie string into an object
     let settingsCookie = JSON.parse(c.substring(`${cookieName}=`.length, c.length));
-    
+
+    // set settings to the cookie's settings
     localSettingList = settingsCookie.local;
+    controlSettingList = settingsCookie.control;
     if(isHost)
         globalSettingList = settingsCookie.global;
 
@@ -252,6 +259,8 @@ export const openSettings = () => {
 
     for(let setting in localSettingList)
         setUISetting(setting, localSettingList[setting]);
+    for(let setting in controlSettingList)
+        setUISetting(setting, controlSettingList[setting]);
     if(isHost)
         for(let setting in globalSettingList)
             setUISetting(setting, globalSettingList[setting]);
