@@ -136,6 +136,7 @@ const saveSettings = (event) => {
         }
 
     setSettings();
+    setCookieSettings();
     closeSettings();
 
     // keep form from refreshing page pt2
@@ -173,6 +174,37 @@ const setControlsEvents = () => {
             controlSettingList[setting] = event.key;
         });
     }
+}
+
+// set cookie
+const setCookieSettings = () => {
+    let cookieSettings = {};
+
+    cookieSettings['local'] = localSettingList;
+    if(isHost)
+        cookieSettings['global'] = globalSettingList;
+
+    document.cookie = `settings=${JSON.stringify(cookieSettings)}`
+}
+
+// read cookie
+const getCookieSettings = () => {
+    const cookieName = 'settings'
+    let c = document.cookie.split(';').find( item => item.trim().startsWith(`${cookieName}=`) );
+
+    // do nothing if the cookie does not exist
+    if(!c)
+        return false;
+
+    let settingsCookie = JSON.parse(c.substring(`${cookieName}=`.length, c.length));
+    
+    localSettingList = settingsCookie.local;
+    if(isHost)
+        globalSettingList = settingsCookie.global;
+
+    setSettings();
+
+    return true;
 }
 
 // generate settings modal
@@ -218,9 +250,11 @@ export const openSettings = () => {
     if(settingsModal == null)
         return;
 
-    for(let setting in localSettingList) {
+    for(let setting in localSettingList)
         setUISetting(setting, localSettingList[setting]);
-    }
+    if(isHost)
+        for(let setting in globalSettingList)
+            setUISetting(setting, globalSettingList[setting]);
 
     settingsModal.style.display = 'block';
 }
@@ -267,6 +301,8 @@ export const init = (username, host) => {
     isHost = host;
     newSettingsModal();
 
-    localSettingList.usernameSetting = username;
+    if(!getCookieSettings())
+        localSettingList.usernameSetting = username;
+
     document.getElementById('usernameSetting').value = username;
 }

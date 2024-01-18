@@ -95,10 +95,8 @@ const pauseMatch = () => {
 
 // give player host UI elements (start/end button)
 const setHostUi = () => {
-    // start button
+    // start and pause button
     utils.newButton('New Game', startMatch, 'startbutton', divs.controlsDiv);
-
-    // pause button
     utils.newButton('Pause', pauseMatch, 'pauseButton', divs.controlsDiv);
 }
 
