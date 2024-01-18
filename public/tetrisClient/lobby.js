@@ -118,7 +118,7 @@ const initUI = (players) => {
     if(session.isHost)
         setHostUi();
 
-    settings.init(session.username, session.isHost);
+    settings.init(session);
 
     utils.newButton('Settings', settings.openSettings, 'settingsButton', divs.controlsDiv);
 }

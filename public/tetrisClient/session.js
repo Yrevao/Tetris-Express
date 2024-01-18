@@ -7,6 +7,18 @@ export let isHost = false;
 export let id = null;
 export let match = null;
 
+export const getNewUsername = () => {
+    return new Promise((resolve, reject) => {
+        utils.request({ method: 'username' }, url.origin + '/utils')
+            .then(data => {
+                if(!data.error)
+                    resolve(data.name);
+                else
+                    reject('Error requesting new username');
+            });
+    });
+}
+
 export const init = async (socket) => {
     socketSession = socket;
     id = socket.id;
@@ -22,9 +34,9 @@ export const init = async (socket) => {
         window.history.pushState(null, '', url.toString());
     }
 
-    await utils.request({ method: 'username' }, url.origin + '/utils')
-        .then(data => {
-            username = data.name;
+    await getNewUsername()
+        .then(name => {
+            username = name;
         });
 
     await utils.request({ player: socketSession.id, username: username }, url.toString())

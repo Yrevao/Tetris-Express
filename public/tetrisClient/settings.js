@@ -1,69 +1,78 @@
+// shared objects
+let session = null;
+
 // html elements
 let settingsModal = null;
 
-// settings data
-let isHost = false;
+// settings data objects
+const cookieVersion = '1.0';
 
-let localSettingList = {    // local settings are set on the client side
-    usernameSetting: null,
-    autorepeatDelay: 167,
-    autorepeatSpeed: 33,
+const defaultSettings = {
+    local: {
+        usernameSetting: 'none',
+        autorepeatDelay: 167,
+        autorepeatSpeed: 33,
+    },
+    control: {
+        moveLeft: 'ArrowLeft',
+        moveRight: 'ArrowRight',
+        rotLeft: 'z',
+        rotRight: 'ArrowUp',
+        rot180: 'a',
+        softDrop: 'ArrowDown',
+        hardDrop: ' ',
+        hold: 'c',
+    },
+    global: {
+        forceSettings: false,
+        sevenBag: true,
+        gravity: 5,
+        softDropSpeed: 80,
+        lockDelay: 500,
+    }
 }
-let controlSettingList = {
-    moveLeft: 'ArrowLeft',
-    moveRight: 'ArrowRight',
-    rotLeft: 'z',
-    rotRight: 'ArrowUp',
-    rot180: 'a',
-    softDrop: 'ArrowDown',
-    hardDrop: ' ',
-    hold: 'c',
-}
-let globalSettingList = {   // global settings are set for all players by the host
-    forceSettings: false,
-    sevenBag: true,
-    gravity: 5,
-    softDropSpeed: 80,
-    lockDelay: 500,
-}
+
+let localSettingList = defaultSettings.local;       // local settings are set on the client side
+let controlSettingList = defaultSettings.control;   // game controls
+let globalSettingList = defaultSettings.global      // global settings are set for all players by the host
 
 // settings ui html
 let localSettingHTML = `
 <p class="category">Local Settings</p>
     <label for="usernameSetting">Username: </label>
-        <input type="text" required minlength="1" id="usernameSetting"></input>
+        <input type=text" id="usernameSetting" readonly> <input type="button" id="newUsernameButton" value="New"></input>
     <br>
     <label for="autorepeatDelay">Key Autorepeat Delay (ms):</label> 
-        <input type="number" required minlength="1" value=167 id="autorepeatDelay"></input>
+        <input type="number" required minlength="1" id="autorepeatDelay"></input>
     <br>
     <label for="autorepeatSpeed">Key Autorepeat Speed (ms):</label> 
-        <input type="number" required minlength="1" min="1" value=33 id="autorepeatSpeed"></input>
+        <input type="number" required minlength="1" min="1" id="autorepeatSpeed"></input>
 `;
 let controlSettingHTML = `
 <p class="category">Controls</p>
     <label for="moveLeft">Move Left:</label>
-        <input type="text" value="ArrowLeft" id="moveLeft"></input>
+        <input type="text" id="moveLeft"></input>
     <br>
     <label for="moveRight">Move Right:</label>
-        <input type="text" value="ArrowRight" id="moveRight"></input>
+        <input type="text" id="moveRight"></input>
     <br>
     <label for="rotLeft">Rotate Left:</label>
-        <input type="text" value="z" id="rotLeft"></input>
+        <input type="text" id="rotLeft"></input>
     <br>
     <label for="rotRight">Rotate Right:</label>
-        <input type="text" value="ArrowUp" id="rotRight"></input>
+        <input type="text" id="rotRight"></input>
     <br>
     <label for="rot180">Rotate 180:</label>
-        <input type="text" value="a" id="rot180"></input>
+        <input type="text" id="rot180"></input>
     <br>
     <label for="softDrop">Soft Drop:</label>
-        <input type="text" value="ArrowDown" id="softDrop"></input>
+        <input type="text" id="softDrop"></input>
     <br>
     <label for="hardDrop">Hard Drop:</label>
-        <input type="text" value=" " id="hardDrop"></input>
+        <input type="text" id="hardDrop"></input>
     <br>
     <label for="hold">Hold:</label>
-        <input type="text" value="c" id="hold"></input>
+        <input type="text" id="hold"></input>
 `
 let globalSettingHTML = `
 <p class="category">Global Settings</p>
@@ -74,13 +83,13 @@ let globalSettingHTML = `
         <input type="checkbox" id="sevenBag" checked="true">
     <br>
     <label for="gravity">Gravity cells per second</label>
-        <input type="number" required minlength="1" value=5 id="gravity"></input>
+        <input type="number" required minlength="1" id="gravity"></input>
     <br>
     <label for="softDropSpeed">Soft Drop cells per second</label>
-        <input type="number" required minlength="1" value=80 id="softDropSpeed"></input>
+        <input type="number" required minlength="1" id="softDropSpeed"></input>
     <br>
     <label for="lockDelay">Lock delay time in ms</label>
-        <input type="number" required minlength="1" value=500 id="lockDelay"></input>
+        <input type="number" required minlength="1" id="lockDelay"></input>
 `
 
 // settings menu methods
@@ -107,6 +116,7 @@ const setUISetting = (setting, value) => {
     switch(settingElement.type) {
         case "text":
             settingElement.value = value;
+            break;
         case "number":
             settingElement.value = value;
             break;
@@ -121,7 +131,8 @@ const closeSettings = () => {
     settingsModal.style.display = 'none';
 }
 
-const saveSettings = (event) => {
+// settings form submit button
+const saveButton = (event) => {
     // keep form from refreshing page pt1
     event.preventDefault();
 
@@ -129,7 +140,11 @@ const saveSettings = (event) => {
         let value = getUISetting(setting);
         localSettingList[setting] = value;
     }
-    if(isHost)
+    for(let setting in controlSettingList) {
+        let value = getUISetting(setting);
+        controlSettingList[setting] = value;
+    }
+    if(session.isHost)
         for(let setting in globalSettingList) {
             let value = getUISetting(setting);
             globalSettingList[setting] = value;
@@ -171,7 +186,7 @@ const setControlsEvents = () => {
 
         control.addEventListener('keyup', (event) => {
             control.value = event.key;
-            controlSettingList[setting] = event.key;
+            setUISetting(setting, event.key);
         });
     }
 }
@@ -181,9 +196,10 @@ const setCookieSettings = () => {
     let cookieSettings = {};
 
     // set cookie object's properties to settings
+    cookieSettings['version'] = cookieVersion;
     cookieSettings['local'] = localSettingList;
     cookieSettings['control'] = controlSettingList;
-    if(isHost)
+    if(session.isHost)
         cookieSettings['global'] = globalSettingList;
 
     // save cookie as JSON string
@@ -203,15 +219,51 @@ const getCookieSettings = () => {
     // convert the JSON cookie string into an object
     let settingsCookie = JSON.parse(c.substring(`${cookieName}=`.length, c.length));
 
+    // do nothing if the cookie is outdated
+    if(settingsCookie.version != cookieVersion)
+        return false;
+
     // set settings to the cookie's settings
     localSettingList = settingsCookie.local;
     controlSettingList = settingsCookie.control;
-    if(isHost)
+    if(session.isHost)
         globalSettingList = settingsCookie.global;
 
-    setSettings();
-
     return true;
+}
+
+// reset settings in form to defaults
+const resetSettings = async (apply) => {
+    let settingMethod = apply == true ? 
+        (setting, destObject, srcObject) => {
+            destObject[setting] = srcObject[setting];
+        }
+        :
+        (setting, destObject, srcObject) => {
+            setUISetting(setting, srcObject[setting]);
+        };
+
+    for(let setting in defaultSettings.local)
+        settingMethod(setting, localSettingList, defaultSettings.local);
+    
+    for(let setting in defaultSettings.control)
+        settingMethod(setting, controlSettingList, defaultSettings.control);
+    
+    if(session.isHost)
+        for(let setting in defaultSettings.global)
+            settingMethod(setting, globalSettingList, defaultSettings.global);
+
+    // set settings that require server side data
+    let newUsername = await session.getNewUsername();
+    settingMethod('usernameSetting', localSettingList, { usernameSetting: newUsername });
+}
+
+// when the username button is clicked set the value of the button to the new username retrieved from the server
+const usernameButton = async () => {
+    await session.getNewUsername()
+        .then((name) => {
+            setUISetting('usernameSetting', name);
+        });
 }
 
 // generate settings modal
@@ -232,15 +284,20 @@ const newSettingsModal = () => {
         <br>
             ${controlSettingHTML}
         <br>
-            ${isHost ? globalSettingHTML : '<i>You must be host to change global settings</i>'}
+            ${session.isHost ? globalSettingHTML : '<i>You must be host to change global settings</i>'}
         <br>
+        <input class="buttons" id="resetButton" type="button" value="Reset Defaults">
         <input class="buttons" type="submit" value="Save">
         </form>
     `;
 
     settingsModal.appendChild(menuDiv);
     rootDiv.appendChild(settingsModal);
-    document.getElementById('settingsForm').addEventListener('submit', saveSettings);
+
+    // form buttons 
+    document.getElementById('newUsernameButton').onclick = usernameButton;
+    document.getElementById('resetButton').onclick = resetSettings;
+    document.getElementById('settingsForm').addEventListener('submit', saveButton);
 
     // close the modal if the close button or if the page around the modal is clicked
     document.getElementsByClassName('close')[0].onclick = closeSettings;
@@ -261,7 +318,7 @@ export const openSettings = () => {
         setUISetting(setting, localSettingList[setting]);
     for(let setting in controlSettingList)
         setUISetting(setting, controlSettingList[setting]);
-    if(isHost)
+    if(session.isHost)
         for(let setting in globalSettingList)
             setUISetting(setting, globalSettingList[setting]);
 
@@ -303,15 +360,17 @@ export const bindSetting = (setting, method, control) => {
 }
 
 // settings elements that depend on server side data
-export const init = (username, host) => {
+export const init = async (initSession) => {
+    session = initSession;
+
     if(settingsModal)
         settingsModal.remove();
 
-    isHost = host;
     newSettingsModal();
 
     if(!getCookieSettings())
-        localSettingList.usernameSetting = username;
+        await resetSettings(true);
 
-    document.getElementById('usernameSetting').value = username;
+    setCookieSettings();
+    setSettings();
 }

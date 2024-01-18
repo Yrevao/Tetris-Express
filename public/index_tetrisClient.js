@@ -27,6 +27,5 @@ window.onload = async () => {
         // reset gameplay objects
         await session.init(socket);
         setEvents(session);
-        game.updateUsername(session.username);
     });
 };
