@@ -423,10 +423,12 @@ export const getViews = () => {
     return [gameView, holdView, nextView];
 }
 
+// change the username stored in the game state
 export const updateUsername = (name) => {
     scores.usernameScore.textContent = name;
 }
 
+// set the pause state of the game, resync time when the game is unpaused
 export const pause = (paused) => {
     state.paused = paused;
 

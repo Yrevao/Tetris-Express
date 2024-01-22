@@ -1,7 +1,7 @@
 // modules
-const gameUtils = require('./gameUtils');
-const utils = require('./utils');
-const draw = require('./draw');
+const gameUtils = require('./gameUtils.js');
+const utils = require('./utils.js');
+const draw = require('./draw.js');
 const loop = require('./loop.js');
 const input = require('./input.js');
 const settings = require('./settings.js');

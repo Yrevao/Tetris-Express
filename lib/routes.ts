@@ -3,7 +3,7 @@ const controllers = require('./controllers');
 
 module.exports = (app, io) => {
     // webpacked javascripts
-    app.use(express.static('dist'));
+    app.use(express.static('dist/webpack'));
 
     // rendered tetris client html
     app.get('/', controllers.tetrisClient.init);

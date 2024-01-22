@@ -83,14 +83,12 @@ const names = [
     `Cherry`
 ]
 
-module.exports = {
-    generateUsername: (req, res) => {
-        const name1 = Math.floor(Math.random()*names.length);
-        const name2 = Math.floor(Math.random()*names.length);
-        const number = Math.floor(Math.random()*100);
+module.exports.generateUsername = (req, res) => {
+    const name1 = Math.floor(Math.random()*names.length);
+    const name2 = Math.floor(Math.random()*names.length);
+    const number = Math.floor(Math.random()*100);
 
-        const username = `${names[name1]}${names[name2]}${number}`;
+    const username = `${names[name1]}${names[name2]}${number}`;
 
-        res.json({name: username});
-    }
+    res.json({name: username});
 }
