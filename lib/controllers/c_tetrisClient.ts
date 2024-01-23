@@ -1,9 +1,7 @@
 const utils = require('../utils');
 const views = require ('../views');
-const s_match = require('../schemas/s_match');
-const s_player = require('../schemas/s_player');
-
-const s_player_update_data = ['board', 'bagCount'];
+import { Match, newMatch, s_match } from '../schemas/s_match';
+import { Player, newPlayer, s_player } from '../schemas/s_player';
 
 const generateSevenBag = (): number[] => {
     // shuffle pieces into bag
@@ -22,7 +20,7 @@ const generateSevenBag = (): number[] => {
 
 const resetMatch = (matchId) => {
     // reset match schema
-    let match = s_match.findByKey(matchId);
+    let match: Match = s_match.findByKey(matchId);
 
     match.bags = [];
     match.started = false;
