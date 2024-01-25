@@ -1,7 +1,8 @@
-const express = require('express');
+import express from 'express';
+import socketIO from 'socket.io';
 const controllers = require('./controllers');
 
-module.exports = (app, io) => {
+module.exports = (app: express.Application, io: socketIO.Server) => {
     // webpacked javascripts
     app.use(express.static('dist/webpack'));
 
@@ -12,18 +13,18 @@ module.exports = (app, io) => {
     // tetris gameplay synchronization
     app.post('/join', controllers.tetrisClient.join);
     app.post('/bag', controllers.tetrisClient.nextBag);
-    app.post('/update', (req, res) => {
+    app.post('/update', (req: express.Request, res: express.Response) => {
         controllers.tetrisClient.updateState(req, res, io);
     });
-    app.post('/start', (req, res) => {
+    app.post('/start', (req: express.Request, res: express.Response) => {
         controllers.tetrisClient.startMatch(req, res, io);
     });
-    app.post('/pause', (req, res) => {
+    app.post('/pause', (req: express.Request, res: express.Response) => {
         controllers.tetrisClient.pauseMatch(req, res, io);
     })
 
     // utils
-    app.post('/utils', (req, res) => {
+    app.post('/utils', (req: express.Request, res: express.Response) => {
         switch(req.body.method) {
             case 'username':
                 controllers.utils.generateUsername(req, res);
@@ -31,7 +32,7 @@ module.exports = (app, io) => {
     })
 
     // SocketIO routes
-    io.on('connection', (socket) => {
+    io.on('connection', (socket: socketIO.Socket) => {
         socket.on('joinSocket', () => {
             controllers.tetrisClient.joinSocket(socket, io);
         });
