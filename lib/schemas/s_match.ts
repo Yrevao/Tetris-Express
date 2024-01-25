@@ -18,4 +18,4 @@ const newMatch = (): Match => {
     }
 }
 
-let s_match = new Schema<Match>();
+let s_match = new Schema<Match>(newMatch);

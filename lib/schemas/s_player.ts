@@ -13,7 +13,7 @@ type Player = {
 }
 
 // create a new player object with default and argument values assigned
-const newPlayer = (match, username, host): Player => {
+const newPlayer = (match: string, username: string, host: boolean): Player => {
     return {
         username: username,
         match: match,
@@ -25,4 +25,4 @@ const newPlayer = (match, username, host): Player => {
     }
 }
 
-const s_player = new Schema<Player>();
+const s_player = new Schema<Player>(newPlayer);

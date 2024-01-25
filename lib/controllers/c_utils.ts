@@ -1,4 +1,6 @@
-const names = [
+import express from 'express';
+
+const names: string[] = [
     `Doctor`,
     `Autumn`,
     `Daria`,
@@ -83,12 +85,12 @@ const names = [
     `Cherry`
 ]
 
-module.exports.generateUsername = (req, res) => {
-    const name1 = Math.floor(Math.random()*names.length);
-    const name2 = Math.floor(Math.random()*names.length);
-    const number = Math.floor(Math.random()*100);
+module.exports.generateUsername = (req: express.Request, res: express.Response) => {
+    const name1: number = Math.floor(Math.random()*names.length);
+    const name2: number = Math.floor(Math.random()*names.length);
+    const number: number = Math.floor(Math.random()*100);
 
-    const username = `${names[name1]}${names[name2]}${number}`;
+    const username: string = `${names[name1]}${names[name2]}${number}`;
 
     res.json({name: username});
 }

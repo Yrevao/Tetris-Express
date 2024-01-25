@@ -1,7 +1,9 @@
-const utils = require('../utils');
+import express from 'express';
+import socketIO from 'socket.io';
 const views = require ('../views');
 import { Match, newMatch, s_match } from '../schemas/s_match';
 import { Player, newPlayer, s_player } from '../schemas/s_player';
+
 
 const generateSevenBag = (): number[] => {
     // shuffle pieces into bag
@@ -18,7 +20,7 @@ const generateSevenBag = (): number[] => {
     return bag;
 }
 
-const resetMatch = (matchId) => {
+const resetMatch = (matchId: string) => {
     // reset match schema
     let match: Match = s_match.findByKey(matchId);
 
@@ -33,31 +35,42 @@ const resetMatch = (matchId) => {
     s_player.findManyByPropertyAndUpdate('match', matchId, 'bagCount', 0);
 }
 
-module.exports.init = (req, res) => {
+module.exports.init = (req: express.Request, res: express.Response) => {
     const locals = { title: 'Tetris Express', bundle: 'bundle_tetrisClient.js' };
 
     res.send(views.bootstrap(locals));
 }
 
-module.exports.join = (req, res) => {
-    let host = false;
-    if(Object.keys(s_match.findManyByProperty('match', req.query.match)).length == 0)
-        host = true;
+module.exports.join = (req: express.Request, res: express.Response) => {
+    // check that req object has the correct values
+    let playerId: string | undefined = req.body.player;
+    let matchId: string | undefined = req.body.match;
+    let username: string | undefined = req.body.username;
+    if(!playerId || !matchId || !username) {
+        res.json({isHost: false});
+        return;
+    }
 
-    s_player.insert(req.body.player, req.query.match, req.body.username, host);
+    // check if the player is host by checking if they are the only player in the match
+    let host: boolean = Object.keys(s_player.findManyByProperty('match', matchId)).length == 0;
 
-    let match = s_match.findByKey(req.query.match);
-    if(match == null)
-        s_match.insert(req.query.match);
+    // add player and match if the match doesen't exist
+    s_player.insert(playerId, matchId, username, host);
+    let match: string | undefined = s_match.findByKey(matchId);
+    if(!match)
+        s_match.insert(matchId);
 
     res.json({isHost: host});
 }
 
-module.exports.nextBag = (req, res) => {
+module.exports.nextBag = (req: express.Request, res: express.Response) => {
     // player data and check if player exists
-    const player = s_player.findByKey(req.body.player);
-    if(!player)
+    const playerId: string | undefined = req.body.player;
+    if(!playerId) {
+        res.json({bag: []});
         return;
+    }
+    const player: Player = s_player.findByKey(req.body.player);
 
     // bag number the player needs
     const currentBag: number = player.bagCount + 1;
@@ -65,7 +78,7 @@ module.exports.nextBag = (req, res) => {
     let currentBags = s_match.findByKey(player.match).bags;
 
     // player is on the bag they need
-    s_player.findByKeyAndUpdate(req.body.player, 'bagCount', currentBag);
+    s_player.findByKeyAndUpdate(playerId, 'bagCount', currentBag);
 
     let bag: number[] = [];
     if(!currentBags)
@@ -95,20 +108,34 @@ module.exports.nextBag = (req, res) => {
     res.json({bag: bag});
 }
 
-module.exports.updateState = (req, res, io) => {
-    const playerId = req.body.player;
-    const player = s_player.findByKey(playerId);
-    if(!player)
+module.exports.updateState = (req: express.Request, res: express.Response, io: socketIO.Server) => {
+    const playerId: string | undefined = req.body.player;
+    const flag: string | undefined = req.body.flag;
+    if(!flag || !playerId) {
+        res.json({status: 'ok'});
         return;
-    const matchId = player.match;
+    }
 
-    switch(req.body.flag) {
+    const player: Player = s_player.findByKey(playerId);
+    const matchId: string = player.match;
+
+    switch(flag) {
         case 'match':
+            if(!req.body.board || req.body.lost) {
+                res.json({status: 'ok'});
+                return;
+            }
+
             // update the match data in the player's schema
             player.board = req.body.board;
             player.lost = req.body.lost;
             break;
         case 'username':
+            if(!req.body.username) {
+                res.json({status: 'ok'});
+                return;
+            }
+
             // update username
             player.username = req.body.username;
             break;
@@ -119,11 +146,14 @@ module.exports.updateState = (req, res, io) => {
     io.to(matchId).emit('update', {flag: 'update', player: playerId, board: player.board, username: player.username, lost: req.body.lost});
 
     // check if all the players have lost
-    let players = s_player.findManyByProperty('match', matchId);
+    let players: Map<string, Player> = s_player.findManyByProperty('match', matchId);
     
-    let allLost = true;
-    for(let id in players) {
-        if(!players[id].lost) {
+    let allLost: boolean = true;
+    for(let item of players) {
+        let id: string = item[0];
+        let player: Player = item[1];
+
+        if(!player.lost) {
             allLost = false;
             break;
         }
@@ -136,9 +166,9 @@ module.exports.updateState = (req, res, io) => {
     res.json({status: 'ok'});
 }
 
-module.exports.startMatch = (req, res, io) => {
-    let player = s_player.findByKey(req.body.player);
-    if(!player.host) {
+module.exports.startMatch = (req: express.Request, res: express.Response, io: socketIO.Server) => {
+    let player: Player | undefined = s_player.findByKey(req.body.player);
+    if(!player || !player.host) {
         res.json({status: 'ok'});
         return;
     }
@@ -146,8 +176,8 @@ module.exports.startMatch = (req, res, io) => {
     resetMatch(player.match);
 
     // set match settings
-    let match = s_match.findByKey(player.match);
-    console.log(match);
+    let match: Match = s_match.findByKey(player.match);
+
     match.sevenBag = req.body.settings.global.sevenBag;
     match.started = true;
 
@@ -157,52 +187,60 @@ module.exports.startMatch = (req, res, io) => {
     res.json({status: 'ok'});
 }
 
-module.exports.pauseMatch = (req, res, io) => {
-    let player = s_player.findByKey(req.body.player);
-    if(!player.host || !s_match.findByKey(player.match).started) {
+module.exports.pauseMatch = (req: express.Request, res: express.Response, io: socketIO.Server) => {
+    let player: Player | undefined = s_player.findByKey(req.body.player);
+    if(!player || !player.host || !s_match.findByKey(player.match).started) {
         res.json({status: 'ok'});
         return;
     }
 
     // toggle paused state of match
-    let match = s_match.findByKey(player.match);
+    let match: Match = s_match.findByKey(player.match);
     match.paused = !match.paused;
     s_match.findByKeyAndOverwrite(player.match, match);
 
     io.to(player.match).emit('pause', { paused: match.paused });
     res.json({status: 'ok'});
-
 }
 
-module.exports.joinSocket = (socket, io) => {
-    const player = s_player.findByKey(socket.id);
+module.exports.joinSocket = (socket: socketIO.Socket, io: socketIO.Server) => {
+    const player: Player = s_player.findByKey(socket.id);
     if(!player)
         return;
-    const matchId = player.match;
+    const matchId: string = player.match;
 
     // once the player is connected add their socket to the player schema
     s_player.findByKeyAndUpdate(socket.id, 'socket', socket);
     socket.join(matchId);
 
-    const playerData = s_player.findManyByProperty('match', matchId);
-    const players = utils.reprop(playerData, ['board', 'username']);
+    const playerData: Map<string, Player> = s_player.findManyByProperty('match', matchId);
+    const players: Map<string, Object> = new Map();
+
+    for(let item of playerData) {
+        let aPlayer = {
+            board: item[1].board,
+            username: item[1].username
+        }
+
+        players.set(item[0], aPlayer)
+    }
 
     io.to(socket.id).emit('update', {flag: 'init', players: players});
     io.to(matchId).emit('update', {flag: 'join', player: socket.id, username: player.username});
 }
 
-module.exports.leave = (socket, io) => {
-    const player = s_player.findByKey(socket.id);
+module.exports.leave = (socket: socketIO.Socket, io: socketIO.Server) => {
+    const player: Player = s_player.findByKey(socket.id);
     if(!player)
         return;
-    const matchId = player.match;
+    const matchId: string = player.match;
     
     // when a player leaves delete them from the player schema
     s_player.findByKeyAndDelete(socket.id);
     socket.leave(matchId)
 
     // delete the match if there's no players in it
-    const playerCount = Object.keys(s_player.findManyByProperty('match', matchId)).length;
+    const playerCount: number = Object.keys(s_player.findManyByProperty('match', matchId)).length;
     if(playerCount == 0)
         s_match.findByKeyAndDelete(matchId);
 
@@ -211,7 +249,7 @@ module.exports.leave = (socket, io) => {
 
     // if the host leaves assign another player to host
     if(player.host) {
-        let newHost = s_player.findManyKeysByProperty('match', matchId)[0];
+        let newHost: string = s_player.findManyKeysByProperty('match', matchId)[0];
         s_player.findByKeyAndUpdate(newHost, 'host', true);
 
         io.to(newHost).emit('update', {flag: 'giveHost'});
