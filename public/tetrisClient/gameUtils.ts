@@ -1,4 +1,21 @@
-const draw = require('./draw.js');
+import * as draw from './draw.ts';
+
+// color type
+export type Color = {
+    r: number,
+    g: number,
+    b: number
+}
+
+// grid box type
+export type Box = {
+    color: Color,
+    locked: boolean,
+    effect: any
+}
+
+// grid type
+export type Grid = (Box | null)[][];
 
 // update the contents of all the canvases with data from the passed array
 export const updateViews = (views) => {
@@ -9,7 +26,7 @@ export const updateViews = (views) => {
 }
 
 // box factory
-export const newBox = (locked, color, effect) => {
+export const newBox = (locked: boolean, color: Color, effect?: any): Box => {
     // color is css color
     // locked tells if the box needs to be moved down by gravity or if it's settled
     // graphical effects applied to the box, mainly changing color a bit to indicate that the box is locking in place
@@ -21,11 +38,11 @@ export const newBox = (locked, color, effect) => {
 }
 
 // box 2d array factory
-export const newGrid = (width, height, filler) => {
-    let outGrid = [];
+export const newGrid = (width: number, height: number, filler?: any): Grid => {
+    let outGrid: Box[][] = [];
 
     for (let i = 0; i < width; i++) {
-        let row = [];
+        let row: Box[] | null = [];
 
         for (let j = 0; j < height; j++) {
             row.push(filler);
@@ -38,7 +55,7 @@ export const newGrid = (width, height, filler) => {
 }
 
 // color factory
-export const newColor = (r, g, b) => {
+export const newColor = (r: number, g: number, b: number): Color => {
     return {
         r,
         g,
@@ -47,7 +64,7 @@ export const newColor = (r, g, b) => {
 }
 
 // blend colors to make them appear transparent using the over operator
-export const applyAlpha = (ca, cb, aa, ab) => {
+export const applyAlpha = (ca: Color, cb: Color, aa: number, ab: number) => {
     let c = newColor(0, 0, 0);
     let a = aa + (ab * (1 - aa));
     const over = (c1, c2) => ((c1*aa) + ((c2*ab) * (1 - aa))) / a;

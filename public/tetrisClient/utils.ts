@@ -1,5 +1,5 @@
 // send formatted post request with json data
-export const request = (data, url, get) => {
+export const request = (data: any, url: string, get?: boolean): Promise<any> => {
     return new Promise((resolve, reject) => {
         const params = {
             method: get ? 'GET' : 'POST',
@@ -21,12 +21,12 @@ export const request = (data, url, get) => {
 }
 
 // create button and add it as a child to another DOM element
-export const newButton = (text, method, id, parentNode) => {
-    let oldButton = document.getElementById(id);
+export const newButton = (text: string, method: any, id: string, parentNode: any): HTMLButtonElement => {
+    let oldButton: HTMLElement | null = document.getElementById(id);
     if(oldButton)
         oldButton.remove();
 
-    let button = document.createElement('button');
+    let button: HTMLButtonElement = document.createElement('button');
 
     button.className = 'buttons';
     button.id = id;

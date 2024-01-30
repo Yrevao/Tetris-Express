@@ -2,7 +2,7 @@ const webpack = require('webpack');
 const path = require('path');
 
 module.exports = {
-  entry: './public/index_tetrisClient.js',
+  entry: './public/index_tetrisClient.ts',
   mode: 'development',
   output: {
     path: path.resolve(__dirname, 'dist/webpack'),
@@ -12,12 +12,12 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.(js|jsx)$/,
+        test: /\.(ts)$/,
         exclude: /node_modules/,
         use: {
           loader: "babel-loader",
           options: {
-            presets: ['@babel/preset-env', "@babel/preset-react"]
+            presets: ["@babel/preset-typescript", "@babel/preset-react"]
           }
         }
       },

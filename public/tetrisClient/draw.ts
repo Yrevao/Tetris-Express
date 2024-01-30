@@ -1,7 +1,7 @@
-const utils = require('./gameUtils.js');
+import * as utils from './gameUtils.ts';
 
 // view objects
-export const newView = (viewW, viewH, x, y, grid, targetCanvas) => {
+export const newView = (viewW: number, viewH: number, x: number, y: number, grid: utils.Grid, targetCanvas: HTMLCanvasElement): any => {
     return {
         viewportW: viewW,
         viewportH: viewH,
@@ -13,7 +13,7 @@ export const newView = (viewW, viewH, x, y, grid, targetCanvas) => {
 }
 
 // create a new canvas element for a tetris board
-export const newPlayfieldCanvas = (width, height, scale, canvasId, parentNode) => {
+export const newPlayfieldCanvas = (width: number, height: number, scale: string, canvasId: string, parentNode: HTMLElement): HTMLCanvasElement => {
     // canvas dom node
     const playfield = document.createElement('canvas');
     playfield.id = canvasId;
@@ -26,8 +26,11 @@ export const newPlayfieldCanvas = (width, height, scale, canvasId, parentNode) =
 }
 
 // draw block on tetris board
-export const drawBlock = (x, y, gridW, gridH, c, playfieldCanvas) => {
+export const drawBlock = (x: number, y: number, gridW: number, gridH: number, c: utils.Color, playfieldCanvas: HTMLCanvasElement) => {
     let ctx = playfieldCanvas.getContext("2d");
+    if(!ctx)
+        return;
+
     ctx.fillStyle = `rgb(${c.r}, ${c.g}, ${c.b})`;
 
     // scale the block to the board
@@ -40,7 +43,7 @@ export const drawBlock = (x, y, gridW, gridH, c, playfieldCanvas) => {
 }
 
 // draw all the box objects from a grid on a canvas
-export const drawGrid = (viewportW, viewportH, startX, startY, grid, canvas) => {
+export const drawGrid = (viewportW: number, viewportH: number, startX: number, startY: number, grid: utils.Grid, canvas: HTMLCanvasElement) => {
     for(let x = startX; x < startX + viewportW && x < grid.length; x++) {
         for(let y = startY; y < startY + viewportH && y < grid[0].length; y++) {
             const block = grid[x][y];
@@ -51,7 +54,10 @@ export const drawGrid = (viewportW, viewportH, startX, startY, grid, canvas) => 
 }
 
 // clear the visible screen
-export const cls = (playfieldCanvas) => {
+export const cls = (playfieldCanvas: HTMLCanvasElement) => {
     let ctx = playfieldCanvas.getContext("2d");
+    if(!ctx)
+        return;
+
     ctx.clearRect(0, 0, playfieldCanvas.width, playfieldCanvas.height);
 }

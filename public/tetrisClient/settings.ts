@@ -1,13 +1,13 @@
 // shared objects
-let session = null;
+let session: any | null = null;
 
 // html elements
-let settingsModal = null;
+let settingsModal: HTMLDivElement | null = null;
 
 // settings data objects
-const cookieVersion = '1.0';
+const cookieVersion: string = '1.0';
 
-const defaultSettings = {
+const defaultSettings: any = {
     local: {
         usernameSetting: 'none',
         autorepeatDelay: 167,
@@ -32,12 +32,12 @@ const defaultSettings = {
     }
 }
 
-let localSettingList = defaultSettings.local;       // local settings are set on the client side
-let controlSettingList = defaultSettings.control;   // game controls
-let globalSettingList = defaultSettings.global      // global settings are set for all players by the host
+let localSettingList: any = defaultSettings.local;       // local settings are set on the client side
+let controlSettingList: any = defaultSettings.control;   // game controls
+let globalSettingList: any = defaultSettings.global      // global settings are set for all players by the host
 
 // settings ui html
-let localSettingHTML = `
+let localSettingHTML: string = `
 <p class="category">Local Settings</p>
     <label for="usernameSetting">Username: </label>
         <input type=text" id="usernameSetting" readonly> <input type="button" id="newUsernameButton" value="New"></input>
@@ -48,7 +48,7 @@ let localSettingHTML = `
     <label for="autorepeatSpeed">Key Autorepeat Speed (ms):</label> 
         <input type="number" required minlength="1" min="1" id="autorepeatSpeed"></input>
 `;
-let controlSettingHTML = `
+let controlSettingHTML: string = `
 <p class="category">Controls</p>
     <label for="moveLeft">Move Left:</label>
         <input type="text" id="moveLeft"></input>
@@ -74,7 +74,7 @@ let controlSettingHTML = `
     <label for="hold">Hold:</label>
         <input type="text" id="hold"></input>
 `
-let globalSettingHTML = `
+let globalSettingHTML: string = `
 <p class="category">Global Settings</p>
     <label for="forceSettings">Enforce Local Settings</label>
         <input type="checkbox" id="forceSettings">
@@ -93,11 +93,14 @@ let globalSettingHTML = `
 `
 
 // settings menu methods
-let settingMethods = {};
-let controlSettingMethods = {};
+let settingMethods: any = {};
+let controlSettingMethods: any = {};
 
-const getUISetting = (setting) => {
-    const settingElement = document.getElementById(setting);
+const getUISetting = (setting: string): string | boolean => {
+    const settingElement: HTMLInputElement | null = (document.getElementById(setting) as HTMLInputElement | null);
+
+    if(!settingElement)
+        return false;
 
     switch(settingElement.type) {
         case "text":
@@ -107,46 +110,54 @@ const getUISetting = (setting) => {
         case "checkbox":
             return settingElement.checked;
     }
+
+    return false;
 }
 
 // set setting only in UI
-const setUISetting = (setting, value) => {
-    const settingElement = document.getElementById(setting);
+const setUISetting = (setting: string, value: string | boolean) => {
+    const settingElement: HTMLInputElement | null = (document.getElementById(setting) as HTMLInputElement | null);
+
+    if(!settingElement)
+        return;
 
     switch(settingElement.type) {
         case "text":
-            settingElement.value = value;
+            settingElement.value = (value as string);
             break;
         case "number":
-            settingElement.value = value;
+            settingElement.value = (value as string);
             break;
         case "checkbox":
-            settingElement.checked = value;
+            settingElement.checked = (value as boolean);
             break;
     }
 }
 
 // close settings menu
 const closeSettings = () => {
+    if(!settingsModal)
+        return;
+
     settingsModal.style.display = 'none';
 }
 
 // settings form submit button
-const saveButton = (event) => {
+const saveButton = (event: Event): boolean => {
     // keep form from refreshing page pt1
     event.preventDefault();
 
     for(let setting in localSettingList) {
-        let value = getUISetting(setting);
+        let value: string | boolean = getUISetting(setting);
         localSettingList[setting] = value;
     }
     for(let setting in controlSettingList) {
-        let value = getUISetting(setting);
+        let value: string | boolean = getUISetting(setting);
         controlSettingList[setting] = value;
     }
     if(session.isHost)
         for(let setting in globalSettingList) {
-            let value = getUISetting(setting);
+            let value: string | boolean = getUISetting(setting);
             globalSettingList[setting] = value;
         }
 
@@ -162,8 +173,8 @@ const saveButton = (event) => {
 const setSettings = () => {
     // set general settings
     for(let setting in localSettingList) {
-        let value = localSettingList[setting];
-        let method = settingMethods[setting];
+        let value: string | boolean = localSettingList[setting];
+        let method: any | null = settingMethods[setting];
         
         if(method)
             method(value);
@@ -171,7 +182,7 @@ const setSettings = () => {
 
     // set controls
     for(let control in controlSettingList) {
-        let value = controlSettingList[control];
+        let value: string | boolean = controlSettingList[control];
         controlSettingMethods[control](value);
     }
 
@@ -182,9 +193,9 @@ const setSettings = () => {
 // set events for the controls settings
 const setControlsEvents = () => {
     for(let setting in controlSettingList) {
-        let control = document.getElementById(setting);
+        let control: HTMLInputElement = (document.getElementById(setting) as HTMLInputElement);
 
-        control.addEventListener('keyup', (event) => {
+        control.addEventListener('keyup', (event: KeyboardEvent) => {
             control.value = event.key;
             setUISetting(setting, event.key);
         });
@@ -193,7 +204,7 @@ const setControlsEvents = () => {
 
 // set cookie
 const setCookieSettings = () => {
-    let cookieSettings = {};
+    let cookieSettings: any = {};
 
     // set cookie object's properties to settings
     cookieSettings['version'] = cookieVersion;
@@ -207,17 +218,17 @@ const setCookieSettings = () => {
 }
 
 // read cookie
-const getCookieSettings = () => {
+const getCookieSettings = (): boolean => {
     // extract cookie
-    const cookieName = 'settings'
-    let c = document.cookie.split(';').find( item => item.trim().startsWith(`${cookieName}=`) );
+    const cookieName: string = 'settings'
+    let c: string | undefined = document.cookie.split(';').find( item => item.trim().startsWith(`${cookieName}=`) );
 
     // do nothing if the cookie does not exist
     if(!c)
         return false;
 
     // convert the JSON cookie string into an object
-    let settingsCookie = JSON.parse(c.substring(`${cookieName}=`.length, c.length));
+    let settingsCookie: any = JSON.parse(c.substring(`${cookieName}=`.length, c.length));
 
     // do nothing if the cookie is outdated
     if(settingsCookie.version != cookieVersion)
@@ -233,13 +244,13 @@ const getCookieSettings = () => {
 }
 
 // reset settings in form to defaults
-const resetSettings = async (apply) => {
+const resetSettings = async (apply?: boolean) => {
     let settingMethod = apply == true ? 
-        (setting, destObject, srcObject) => {
+        (setting: string, destObject: any, srcObject: any) => {
             destObject[setting] = srcObject[setting];
         }
         :
-        (setting, destObject, srcObject) => {
+        (setting: string, destObject: any, srcObject: any) => {
             setUISetting(setting, srcObject[setting]);
         };
 
@@ -254,26 +265,34 @@ const resetSettings = async (apply) => {
             settingMethod(setting, globalSettingList, defaultSettings.global);
 
     // set settings that require server side data
-    let newUsername = await session.getNewUsername();
-    settingMethod('usernameSetting', localSettingList, { usernameSetting: newUsername });
+    await session.getNewUsername()
+        .then((data: any) => {
+            settingMethod('usernameSetting', localSettingList, { usernameSetting: data });
+        });
 }
 
 // when the username button is clicked set the value of the button to the new username retrieved from the server
-const usernameButton = async () => {
+const usernameButtonMethod = async () => {
     await session.getNewUsername()
-        .then((name) => {
+        .then((name: any) => {
             setUISetting('usernameSetting', name);
         });
 }
 
+const resetButtonMethod = async () => {
+    await resetSettings();
+}
+
 // generate settings modal
 const newSettingsModal = () => {
-    let rootDiv = document.getElementById('root');
+    let rootDiv: HTMLDivElement | null = (document.getElementById('root') as HTMLDivElement | null);
+    if(!rootDiv)
+        return;
 
     settingsModal = document.createElement('div');
     settingsModal.id = 'settingsModal';
 
-    let menuDiv = document.createElement('div');
+    let menuDiv: HTMLDivElement = document.createElement('div');
     menuDiv.id = 'settingsMenu';
 
     // add menu elements
@@ -295,13 +314,24 @@ const newSettingsModal = () => {
     rootDiv.appendChild(settingsModal);
 
     // form buttons 
-    document.getElementById('newUsernameButton').onclick = usernameButton;
-    document.getElementById('resetButton').onclick = resetSettings;
-    document.getElementById('settingsForm').addEventListener('submit', saveButton);
+    let newUsernameButton: HTMLButtonElement | null = (document.getElementById('newUsernameButton') as HTMLButtonElement | null);
+    let resetButton: HTMLButtonElement | null = (document.getElementById('resetButton') as HTMLButtonElement | null);
+    let settingsForm: HTMLFormElement | null = (document.getElementById('settingsForm') as HTMLFormElement | null);
+
+    if(!newUsernameButton || !resetButton || !settingsForm)
+        return;
+
+    newUsernameButton.onclick = usernameButtonMethod;
+    resetButton.onclick = resetButtonMethod;
+    settingsForm.addEventListener('submit', saveButton);
 
     // close the modal if the close button or if the page around the modal is clicked
-    document.getElementsByClassName('close')[0].onclick = closeSettings;
-    window.onclick = (event) => {
+    let closeButton: HTMLSpanElement | null = (document.getElementsByClassName('close')[0] as HTMLSpanElement | null);
+    if(!closeButton)
+        return;
+
+    closeButton.onclick = closeSettings;
+    window.onclick = (event: Event) => {
         if(event.target == settingsModal)
             closeSettings();
     }
@@ -326,7 +356,7 @@ export const openSettings = () => {
 }
 
 // get settings object to send to server
-export const exportSettings = () => {
+export const exportSettings = (): any => {
     return {
         local: localSettingList,
         global: globalSettingList,
@@ -334,7 +364,7 @@ export const exportSettings = () => {
 }
 
 // apply settings received from server and return game settings object
-export const applySettings = (server) => {
+export const applySettings = (server: any): any => {
     // sync settings to host
     if(server.global.forceSettings) {
         localSettingList.autorepeatDelay = server.local.autorepeatDelay;
@@ -352,7 +382,7 @@ export const applySettings = (server) => {
 }
 
 // set setting method
-export const bindSetting = (setting, method, control) => {
+export const bindSetting = (setting: string, method: any, control: boolean) => {
     if(control)
         controlSettingMethods[setting] = method;
     else
@@ -360,7 +390,7 @@ export const bindSetting = (setting, method, control) => {
 }
 
 // settings elements that depend on server side data
-export const init = async (initSession) => {
+export const init = async (initSession: any) => {
     session = initSession;
 
     if(settingsModal)

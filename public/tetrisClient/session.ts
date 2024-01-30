@@ -1,13 +1,13 @@
-const utils = require("./utils.js");
-const { io } = require("socket.io-client");
-const url = new URL(window.location);
-let socketSession = null;
-export let username = null;
-export let isHost = false;
-export let id = null;
-export let match = null;
+import * as utils from "./utils.ts";
+import { io } from "socket.io-client";
+const url = new URL(window.location.origin);
+let socketSession: any | null = null;
+export let username: string | null = 'none';
+export let isHost: boolean = false;
+export let id: string | null = 'none';
+export let match: string | null = 'none';
 
-export const getNewUsername = () => {
+export const getNewUsername = (): Promise<any> => {
     return new Promise((resolve, reject) => {
         utils.request({ method: 'username' }, url.origin + '/utils')
             .then(data => {
@@ -19,15 +19,22 @@ export const getNewUsername = () => {
     });
 }
 
-export const init = async (socket) => {
+export const init = async (socket: any) => {
     socketSession = socket;
     id = socket.id;
+
+    // null checks
+    if(!socketSession || !id)
+        return;
 
     // check if the url is joining a match, if not create one
     if(url.pathname == '/join' && url.searchParams.get('match') != null)
         match = url.searchParams.get('match');
     else {
         match = socket.id;
+        if(!match)
+            return;
+
         url.pathname = 'join';
         url.searchParams.set('match', match);
 
@@ -35,12 +42,12 @@ export const init = async (socket) => {
     }
 
     await getNewUsername()
-        .then(name => {
-            username = name;
+        .then((data: any) => {
+            username = data;
         });
 
     await utils.request({ player: socketSession.id, username: username }, url.toString())
-        .then(data => {
+        .then((data: any) => {
             if(data.isHost)
                 becomeHost();
             socketSession.emit('joinSocket');
@@ -48,7 +55,7 @@ export const init = async (socket) => {
 }
 
 // request a new bag of 7 shuffled pieces from the server
-export const requestBag = () => {
+export const requestBag = (): Promise<any> => {
     return new Promise((resolve, reject) => {
         utils.request({ player: socketSession.id }, url.origin + '/bag')
             .then(data => {
