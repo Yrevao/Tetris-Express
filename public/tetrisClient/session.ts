@@ -1,6 +1,6 @@
 import * as utils from "./utils.ts";
 import { io } from "socket.io-client";
-const url = new URL(window.location.origin);
+const url = new URL(window.location.href);
 let socketSession: any | null = null;
 export let username: string | null = 'none';
 export let isHost: boolean = false;
@@ -46,7 +46,7 @@ export const init = async (socket: any) => {
             username = data;
         });
 
-    await utils.request({ player: socketSession.id, username: username }, url.toString())
+    await utils.request({ player: socketSession.id, username: username, match: match }, url.toString())
         .then((data: any) => {
             if(data.isHost)
                 becomeHost();

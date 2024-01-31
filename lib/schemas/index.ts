@@ -16,7 +16,7 @@ export class Schema<model> {
 
         const doc = this.#newDoc.apply(null, props);
         this.#store.set(primaryKey, doc);
-
+        
         return true;
     }
 

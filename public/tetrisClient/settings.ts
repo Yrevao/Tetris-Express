@@ -5,7 +5,7 @@ let session: any | null = null;
 let settingsModal: HTMLDivElement | null = null;
 
 // settings data objects
-const cookieVersion: string = '1.0';
+const cookieVersion: string = '1.0.1';
 
 const defaultSettings: any = {
     local: {

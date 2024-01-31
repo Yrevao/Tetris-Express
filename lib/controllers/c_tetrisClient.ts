@@ -52,7 +52,8 @@ module.exports.join = (req: express.Request, res: express.Response) => {
     }
 
     // check if the player is host by checking if they are the only player in the match
-    let host: boolean = Object.keys(s_player.findManyByProperty('match', matchId)).length == 0;
+    let playerCount: number = s_player.findManyByProperty('match', matchId).size;
+    let host: boolean = playerCount == 0;
 
     // add player and match if the match doesen't exist
     s_player.insert(playerId, matchId, username, host);
@@ -214,8 +215,7 @@ module.exports.joinSocket = (socket: socketIO.Socket, io: socketIO.Server) => {
     socket.join(matchId);
 
     const playerData: Map<string, Player> = s_player.findManyByProperty('match', matchId);
-    const players: Map<string, Object> = new Map();
-
+    const players: Map<string, any> = new Map();
     for(let item of playerData) {
         let aPlayer = {
             board: item[1].board,
@@ -225,7 +225,7 @@ module.exports.joinSocket = (socket: socketIO.Socket, io: socketIO.Server) => {
         players.set(item[0], aPlayer)
     }
 
-    io.to(socket.id).emit('update', {flag: 'init', players: players});
+    io.to(socket.id).emit('update', {flag: 'init', players: structuredClone(players)});
     io.to(matchId).emit('update', {flag: 'join', player: socket.id, username: player.username});
 }
 
@@ -240,7 +240,7 @@ module.exports.leave = (socket: socketIO.Socket, io: socketIO.Server) => {
     socket.leave(matchId)
 
     // delete the match if there's no players in it
-    const playerCount: number = Object.keys(s_player.findManyByProperty('match', matchId)).length;
+    const playerCount: number = s_player.findManyByProperty('match', matchId).size;
     if(playerCount == 0)
         s_match.findByKeyAndDelete(matchId);
 

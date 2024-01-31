@@ -8,5 +8,5 @@
         "allowJs": false,
         "outDir": "./dist/typescript"
     },
-    "include": ["./app.js", "./lib/**/*"]
+    "include": ["./lib/**/*"]
 }

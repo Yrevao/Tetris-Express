@@ -18,7 +18,7 @@ export type Box = {
 export type Grid = (Box | null)[][];
 
 // update the contents of all the canvases with data from the passed array
-export const updateViews = (views) => {
+export const updateViews = (views: any) => {
     views.forEach((view) => {
         draw.cls(view.canvas);
         draw.drawGrid(view.viewportW, view.viewportH, view.startX, view.startY, view.board, view.canvas);
@@ -64,7 +64,7 @@ export const newColor = (r: number, g: number, b: number): Color => {
 }
 
 // blend colors to make them appear transparent using the over operator
-export const applyAlpha = (ca: Color, cb: Color, aa: number, ab: number) => {
+export const applyAlpha = (ca: Color, cb: Color, aa: number, ab: number): Color => {
     let c = newColor(0, 0, 0);
     let a = aa + (ab * (1 - aa));
     const over = (c1, c2) => ((c1*aa) + ((c2*ab) * (1 - aa))) / a;
@@ -77,7 +77,7 @@ export const applyAlpha = (ca: Color, cb: Color, aa: number, ab: number) => {
 }
 
 // place input onto base at x, y
-export const stamp = (x, y, base, input) => {
+export const stamp = (x: number, y: number, base: Grid, input: Grid): Grid => {
     for(let i = x; i < x + input.length; i++)
 
         for(let j = y; j < y + input[i-x].length; j++) {
@@ -93,13 +93,15 @@ export const stamp = (x, y, base, input) => {
 }
 
 // recolor blocks in a grid; method arguments: (originalColor) => return newColor
-export const recolor = (grid, method) => {
+export const recolor = (grid: Grid, method: any): Grid => {
     for(let i in grid) {
         for(let j in grid[i]) {
-            let b = grid[i][j];
+            let b: Box | null = grid[i][j];
 
-            if(b != null)
-                grid[i][j].color = method(b.color);
+            if(b) {
+                b.color = method(b.color);
+                grid[i][j] = b;
+            }
         }
     }
 
@@ -107,7 +109,7 @@ export const recolor = (grid, method) => {
 }
 
 // check if input placed at a given x and y will collide with base
-export const checkBoxColl = (x, y, base, input) => {
+export const checkBoxColl = (x: number, y: number, base: Grid, input: Grid): boolean => {
     // check that the x and y are widthin the base
     if(x < base.length && y < base[0].length) {
         // check if there is a collision widthin the area of the input on the base at x and y

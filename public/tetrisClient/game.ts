@@ -105,16 +105,14 @@ const clearPlay = (lock: boolean) => {
     for(let i = 0; i < state.board.length; i++) {
 
         for(let j = 0; j < state.board[0].length; j++) {
-            let box: gameUtils.Box | null = state.board[i][j];
-            if(!box)
-                continue
-
-            if(lock && !box.locked) {
-                box.locked = true;
-                state.board[i][j] = box;
+            if(state.board[i][j] != null && !state.board[i][j].locked) {
+                if(lock) {
+                    state.board[i][j].locked = true;
+                }
+                else {
+                    state.board[i][j] = null;
+                }
             }
-            else
-                state.board[i][j] = null;
         }
     }
 }
@@ -143,11 +141,13 @@ const clearLines = () => {
 }
 
 // find the lowest y value the in play piece can drop to without hitting anything  
-const dropPlay = () => {
+const dropPlay = (): number => {
     for(let y = state.playY; y < view.boardH; y++) {
         if(gameUtils.checkBoxColl(state.playX, y, state.board, getPiece()))
             return y - 1;
     }
+
+    return view.boardH - 1;
 }
 
 // called when the game is lost due to pieces being placed outside of the visible board
@@ -418,20 +418,20 @@ export const tick = () => {
 }
 
 // return canvas and state info for updating graphics
-export const getViews = () => {
+export const getViews = (): any => {
     // generate hold grid based on if a piece is being held
-    let holdGrid = gameUtils.newGrid(4, 2);
+    let holdGrid: gameUtils.Grid = gameUtils.newGrid(4, 2);
     if(state.hold != null)
         holdGrid = gameUtils.stamp(0, 0, holdGrid, blockStore.idToLetter[state.hold](0));
     // generate next grid
-    let nextGrid = gameUtils.newGrid(4, 14);
+    let nextGrid: gameUtils.Grid = gameUtils.newGrid(4, 14);
     for(let i = 0; i < 5; i++)
         gameUtils.stamp(0, i*3, nextGrid, blockStore.idToLetter[state.bag[1+i]](0));
 
     // define views
-    const gameView = draw.newView(10, 20, 0, 20, state.board, view.boardCanvas);
-    const holdView = draw.newView(4, 2, 0, 0, holdGrid, view.holdCanvas);
-    const nextView = draw.newView(4, 14, 0, 0, nextGrid, view.nextCanvas);
+    const gameView: any = draw.newView(10, 20, 0, 20, state.board, view.boardCanvas);
+    const holdView: any = draw.newView(4, 2, 0, 0, holdGrid, view.holdCanvas);
+    const nextView: any = draw.newView(4, 14, 0, 0, nextGrid, view.nextCanvas);
 
     return [gameView, holdView, nextView];
 }

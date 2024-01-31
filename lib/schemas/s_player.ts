@@ -25,4 +25,4 @@ const newPlayer = (match: string, username: string, host: boolean): Player => {
     }
 }
 
-const s_player = new Schema<Player>(newPlayer);
+let s_player = new Schema<Player>(newPlayer);
