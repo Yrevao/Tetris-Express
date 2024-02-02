@@ -107,7 +107,7 @@ const setHostUi = () => {
 }
 
 // place universal ui elements
-const initUI = (players: Map<string, any>) => {
+const initUI = (players: any) => {
     divs.boardsDiv.innerHTML = '';
     divs.controlsDiv.innerHTML = '';
 
@@ -120,12 +120,14 @@ const initUI = (players: Map<string, any>) => {
     utils.newButton('Settings', settings.openSettings, 'settingsButton', divs.controlsDiv);
 
     // place all opponent boards
-    players.forEach((player: any, playerId: string) => {
-        if(playerId != session.id) {
-            const board = player.board.length == 0 ? gameUtils.newGrid(10, 40) : player.board;
-            update(playerId, board, player.username);
-        }
-    })
+    for(let playerId in players) {
+        if(playerId == session.id)
+            continue;
+
+        const player: any = players[playerId];
+        const board: any = player.board.length == 0 ? gameUtils.newGrid(10, 40) : player.board;
+        update(playerId, board, player.username);
+    }
 }
 
 // when you are the only player left in a match you become the host
@@ -160,7 +162,6 @@ export const events = {
         switch(data.flag) {
             case 'init':
                 loop.stop();
-                console.log(data.players);
                 initUI(data.players);
                 break;
             case 'update':

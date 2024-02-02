@@ -122,7 +122,7 @@ module.exports.updateState = (req: express.Request, res: express.Response, io: s
 
     switch(flag) {
         case 'match':
-            if(!req.body.board || req.body.lost) {
+            if(!req.body.board || typeof req.body.lost == typeof undefined) {
                 res.json({status: 'ok'});
                 return;
             }
@@ -169,7 +169,9 @@ module.exports.updateState = (req: express.Request, res: express.Response, io: s
 
 module.exports.startMatch = (req: express.Request, res: express.Response, io: socketIO.Server) => {
     let player: Player | undefined = s_player.findByKey(req.body.player);
-    if(!player || !player.host) {
+    let setting_sevenBag: boolean | undefined = req.body.settings.global.sevenBag;
+    let settings: any = req.body.settings;
+    if(!player || !setting_sevenBag || !settings || !player.host) {
         res.json({status: 'ok'});
         return;
     }
@@ -179,12 +181,12 @@ module.exports.startMatch = (req: express.Request, res: express.Response, io: so
     // set match settings
     let match: Match = s_match.findByKey(player.match);
 
-    match.sevenBag = req.body.settings.global.sevenBag;
+    match.sevenBag = setting_sevenBag;
     match.started = true;
 
     s_match.findByKeyAndOverwrite(player.match, match);
 
-    io.to(player.match).emit('start', req.body.settings);
+    io.to(player.match).emit('start', settings);
     res.json({status: 'ok'});
 }
 
@@ -215,14 +217,13 @@ module.exports.joinSocket = (socket: socketIO.Socket, io: socketIO.Server) => {
     socket.join(matchId);
 
     const playerData: Map<string, Player> = s_player.findManyByProperty('match', matchId);
-    const players: Map<string, any> = new Map();
+    const players: any = {};
     for(let item of playerData) {
         let aPlayer = {
             board: item[1].board,
             username: item[1].username
         }
-
-        players.set(item[0], aPlayer)
+        players[item[0]] = aPlayer;
     }
 
     io.to(socket.id).emit('update', {flag: 'init', players: structuredClone(players)});

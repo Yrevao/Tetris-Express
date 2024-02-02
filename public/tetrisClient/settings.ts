@@ -210,8 +210,7 @@ const setCookieSettings = () => {
     cookieSettings['version'] = cookieVersion;
     cookieSettings['local'] = localSettingList;
     cookieSettings['control'] = controlSettingList;
-    if(session.isHost)
-        cookieSettings['global'] = globalSettingList;
+    cookieSettings['global'] = globalSettingList;
 
     // save cookie as JSON string
     document.cookie = `settings=${JSON.stringify(cookieSettings)}`
@@ -398,8 +397,9 @@ export const init = async (initSession: any) => {
 
     newSettingsModal();
 
-    if(!getCookieSettings())
+    if(!getCookieSettings()) {
         await resetSettings(true);
+    }
 
     setCookieSettings();
     setSettings();
