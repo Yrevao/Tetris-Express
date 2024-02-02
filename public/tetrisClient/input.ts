@@ -1,9 +1,20 @@
-let keyMap = {};                // map keys to methods
-let rolloverMs = -1;            // how long to hold a key before repeat inputs
-let rolloverSpeed = -1;         // how fast to repeat inputs
+let keyMap: any = {};                    // map keys to methods
+let rolloverMs: number = -1;        // how long to hold a key before repeat inputs
+let rolloverSpeed: number = -1;     // how fast to repeat inputs
+
+// the state of a control (key)
+export type KeyState = {
+    action: any,            // method called for each keypress or rollover keypress
+    down: boolean,          // is the key currently down
+    rollover: boolean,      // has the key started rollover keystrokes
+    doRollover: boolean,    // does the key auto keystroke after a certain time
+    whenDown: number,       // Date.now() of when the key was pressed
+    lastAction: number,     // Date.now() of the last time the action method was called
+    presses: number         // how many keypresses need to be executed
+}
 
 // keystate object
-const newKeyState = (action, doRollover) => {
+const newKeyState = (action: any, doRollover: boolean): KeyState => {
     return {
         action: action,
         down: false,
@@ -15,16 +26,16 @@ const newKeyState = (action, doRollover) => {
     }
 }
 
-export const setRollover = (delay, speed) => {
+export const setRollover = (delay: number, speed: number) => {
     rolloverMs = delay;
     rolloverSpeed = speed;
 }
 
-export const bindKey = (key, action, doRollover) => {
+export const bindKey = (key: string, action: any, doRollover: boolean) => {
     keyMap[key] = newKeyState(action, doRollover);
 }
 
-export const getSettings = () => {
+export const getSettings = (): any => {
     return {
         keyMap: keyMap,
         rolloverMs: rolloverMs,
@@ -37,14 +48,14 @@ export const checkKeys = () => {
     // check keystrokes
     for(let k in keyMap) {
         // get state and function for key
-        const keyState = keyMap[k];
-        const keyFunction = keyMap[k].action;
+        const keyState: KeyState = keyMap[k];
+        const keyFunction: any = keyMap[k].action;
 
         // check if key is held long enough for rollover
         if(keyState.doRollover && keyState.down) {
             // update how long the key has been down for
-            const msDown = Date.now() - keyState.whenDown;
-            const msIdle = Date.now() - keyState.lastAction;
+            const msDown: number = Date.now() - keyState.whenDown;
+            const msIdle: number = Date.now() - keyState.lastAction;
 
             // do something if the key has been held down long enough
             if(msDown >= rolloverMs && !keyState.rollover) {
@@ -54,7 +65,7 @@ export const checkKeys = () => {
             }
             else if(msIdle >= rolloverSpeed && keyState.rollover) {
                 // calculate how many rollovers have happened since the last tick
-                const rolloverActions = Math.floor(msIdle / rolloverSpeed);
+                const rolloverActions: number = Math.floor(msIdle / rolloverSpeed);
 
                 keyState.lastAction = Date.now();
                 keyState.presses = rolloverActions;
@@ -71,14 +82,14 @@ export const checkKeys = () => {
 }
 
 // set the current user input
-export const keyAction = (key, down) => {
+export const keyAction = (key: string, down: boolean) => {
     // make sure the key is bound to an action
     if(!Object.getOwnPropertyNames(keyMap).includes(key))
         return;
 
     // only set key if it's down, mapped to something, and has not been held
     if(down && keyMap[key].whenDown == -1) {
-        let keyState = keyMap[key];
+        let keyState: KeyState = keyMap[key];
 
         keyState.down = true;
         keyState.presses++;
@@ -89,7 +100,7 @@ export const keyAction = (key, down) => {
     }
     // on keyup set key as not down
     else if(!down) {
-        let keyState = keyMap[key];
+        let keyState: KeyState = keyMap[key];
 
         keyState.down = false;
         keyState.presses++;
@@ -102,11 +113,11 @@ export const keyAction = (key, down) => {
 }
 
 // keystoke capture
-document.addEventListener('keydown', (event) => {
+document.addEventListener('keydown', (event: KeyboardEvent) => {
     keyAction(event.key, true);
 });
 
-document.addEventListener('keyup', (event) => {
+document.addEventListener('keyup', (event: KeyboardEvent) => {
     event.preventDefault();
     keyAction(event.key, false);
 });

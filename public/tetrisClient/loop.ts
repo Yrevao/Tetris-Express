@@ -1,10 +1,9 @@
-const gameUtils = require('./gameUtils.js');
-let tickrate = null
-let loop = false;
-let tickMethod = null;
+let tickrate: number | null = null
+let loop: boolean = false;
+let tickMethod: any = null;
 
 // update loop at set update per second
-const updateLoop = (ticksPerSecond) => {
+const updateLoop = (ticksPerSecond: number) => {
     setTimeout(() => {
         if(!loop)
             return;
@@ -16,7 +15,7 @@ const updateLoop = (ticksPerSecond) => {
 }
 
 // begin loop using given tick method
-export const start = (ticksPerSecond, initTickMethod) => {
+export const start = (ticksPerSecond: number, initTickMethod: any) => {
     loop = true;
     tickMethod = initTickMethod;
     tickrate = ticksPerSecond;
@@ -24,6 +23,9 @@ export const start = (ticksPerSecond, initTickMethod) => {
 }
 
 export const restart = () => {
+    if(!tickrate)
+        return;
+
     loop = true;
     updateLoop(tickrate);
 }

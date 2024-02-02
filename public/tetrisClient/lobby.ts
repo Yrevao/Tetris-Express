@@ -1,21 +1,21 @@
 // modules
-const gameUtils = require('./gameUtils');
-const utils = require('./utils');
-const draw = require('./draw');
-const loop = require('./loop.js');
-const input = require('./input.js');
-const settings = require('./settings.js');
+import * as gameUtils from './gameUtils.ts';
+import * as utils from './utils.ts';
+import * as draw from './draw.ts';
+import * as loop from './loop.ts';
+import * as input from'./input.ts';
+import * as settings from './settings.ts';
 // shared objects
-let session = null;
-let game = null;
+let session: any | null = null;
+let game: any | null = null;
 // page separation
-let divs = {
+let divs: any = {
     rootDiv: null,
     controlsDiv: null,
     boardsDiv: null,
 }
 // other players
-let opponentState = {
+let opponentState: any = {
     opponents: {},
     canvases: {},
     boards: {},
@@ -23,8 +23,12 @@ let opponentState = {
 }
 
 // remove board when a player leaves
-const leave = (playerId) => {
-    let opponent = document.getElementById(`opponent-${playerId}`);
+const leave = (playerId: string) => {
+    let opponent: HTMLElement | null = document.getElementById(`opponent-${playerId}`);
+    
+    if(!opponent)
+        return;
+    
     opponent.remove();
 
     delete opponentState.opponents[playerId];
@@ -38,17 +42,17 @@ const tickMethod = () => {
     input.checkKeys();
     game.tick();
 
-    const views = game.getViews().concat(getViews());
+    const views: any[] = game.getViews().concat(getViews());
     gameUtils.updateViews(views);
 }
 
 // when another player joins add a board
-const join = (playerId, username) => {
-    let opponentDiv = document.createElement('div');
+const join = (playerId: string, username: string) => {
+    let opponentDiv: HTMLDivElement = document.createElement('div');
     divs.boardsDiv.appendChild(opponentDiv);
     opponentDiv.id = `opponent-${playerId}`;
 
-    let nameplate = document.createElement('div');
+    let nameplate: HTMLDivElement = document.createElement('div');
     nameplate.id = `nameplate-${playerId}`;
     nameplate.textContent = username;
     opponentDiv.appendChild(nameplate);
@@ -57,7 +61,8 @@ const join = (playerId, username) => {
     opponentState.users[playerId] = username;
     opponentState.opponents[playerId] = opponentDiv;
 
-    let opponentArr = Object.keys(opponentState.opponents);
+    // keep boards in alphabetical order
+    let opponentArr: string[] = Object.keys(opponentState.opponents);
     opponentArr.sort((a, b) => {
         return a.localeCompare(b, "en");
     });
@@ -67,13 +72,14 @@ const join = (playerId, username) => {
 }
 
 // update the displayed stats when another player places a piece or changes username
-const update = (playerId, board, username) => {
+const update = (playerId: string, board: any[], username: string) => {
     opponentState.boards[playerId] = board;
 
     // update username if it's been changed
     if(username != null && opponentState.users[playerId] != null && opponentState.users[playerId] != username) {
         let nameplate = document.getElementById(`nameplate-${playerId}`);
-        nameplate.textContent = username;
+        if(nameplate)
+            nameplate.textContent = username;
 
         opponentState.users[playerId] = username;
     }
@@ -101,18 +107,9 @@ const setHostUi = () => {
 }
 
 // place universal ui elements
-const initUI = (players) => {
+const initUI = (players: any) => {
     divs.boardsDiv.innerHTML = '';
     divs.controlsDiv.innerHTML = '';
-
-    // place all opponent boards
-    for(let playerId in players) {
-        if(playerId == session.id)
-            continue;
-
-        const board = players[playerId].board.length == 0 ? gameUtils.newGrid(10, 40) : players[playerId].board;
-        update(playerId, board, players[playerId].username);
-    }
 
     // place host ui elements
     if(session.isHost)
@@ -121,6 +118,16 @@ const initUI = (players) => {
     settings.init(session);
 
     utils.newButton('Settings', settings.openSettings, 'settingsButton', divs.controlsDiv);
+
+    // place all opponent boards
+    for(let playerId in players) {
+        if(playerId == session.id)
+            continue;
+
+        const player: any = players[playerId];
+        const board: any = player.board.length == 0 ? gameUtils.newGrid(10, 40) : player.board;
+        update(playerId, board, player.username);
+    }
 }
 
 // when you are the only player left in a match you become the host
@@ -145,7 +152,7 @@ const setSettingBinds = () => {
 }
 
 export const events = {
-    update: (data) => {
+    update: (data: any) => {
         // update the opponent boards only if the update is for another player
         if(data.player == session.id)
             return;
@@ -171,14 +178,14 @@ export const events = {
                 break;
         }
     },
-    start: async (data) => {
+    start: async (data: any) => {
         // start match
         await game.start(
             settings.applySettings(data)
         );
         loop.start(1000, tickMethod);
     },
-    pause: (data) => {
+    pause: (data: any) => {
         game.pause(data.paused);
 
         if(data.paused)
@@ -186,20 +193,20 @@ export const events = {
         else
             loop.restart();
     },
-    end: (data) => {
+    end: (data: any) => {
         game.pause(true);
         loop.stop();
     },
-    settingUsername: (name) => {
+    settingUsername: (name: string) => {
         session.usernameUpdate(name);
         game.updateUsername(name);
     },
-    settingRollover: (delay, speed) => {
+    settingRollover: (delay: number, speed: number) => {
         input.setRollover(delay, speed);
     }
 }
 
-export const init = (initSession, initGame) => {
+export const init = (initSession: any, initGame: any) => {
     session = initSession;
     game = initGame;
     setSettingBinds();
@@ -211,7 +218,7 @@ export const init = (initSession, initGame) => {
     } 
 
     divs.rootDiv = document.getElementById('root');
-    let bodyDiv = document.getElementsByTagName('body')[0];
+    let bodyDiv: HTMLBodyElement = document.getElementsByTagName('body')[0];
 
     divs.boardsDiv = document.createElement('div');
     divs.boardsDiv.id = 'boards';
@@ -224,7 +231,7 @@ export const init = (initSession, initGame) => {
 }
 
 export const getViews = () => {
-    let views = [];
+    let views: any[] = [];
 
     for(let id in opponentState.boards)
         views.push(draw.newView(10, 20, 0, 20, opponentState.boards[id], opponentState.canvases[id]));

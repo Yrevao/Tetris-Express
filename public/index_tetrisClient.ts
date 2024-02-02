@@ -1,9 +1,9 @@
 const staticStyle = require('./style/staticStyle.css');
-const { io } = require("socket.io-client");
+import { io } from "socket.io-client";
 const socket = io(window.location.origin);
-const game = require('./tetrisClient/game.js');
-const lobby = require('./tetrisClient/lobby.js');
-const session = require('./tetrisClient/session.js');
+import * as game from './tetrisClient/game.ts';
+import * as lobby from './tetrisClient/lobby.ts';
+import * as session from './tetrisClient/session.ts';
 
 // set SocketIO event methods
 let setEvents = (session) => {
