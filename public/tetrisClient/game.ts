@@ -70,10 +70,7 @@ const resetState = () => {
 
 // get the current piece's grid
 const getPiece = (rot?: number | null): gameUtils.Grid => {
-    if(rot)
-        return blockStore.idToLetter[state.bag[0]](rot);
-
-    return blockStore.idToLetter[state.bag[0]](state.playRot);
+    return blockStore.idToLetter[state.bag[0]](rot == null ? state.playRot : rot);
 }
 
 // reset the in play piece's position and metadata to the starting values
@@ -223,13 +220,11 @@ const placeGhost = () => {
 
 // using a set of SRS wall kicks find the first one that allows the piece to rotate without hitting anything
 const kick = (rot) => {
-    const kickData = blockStore.getKickData(state.bag[0], state.playRot, rot);
+    const kickData: number[][] = blockStore.getKickData(state.bag[0], state.playRot, rot);
 
-    for(let i = 0; i < kickData.length; i++) {
-        const kick = kickData[i];
-
-        const kickX = state.playX + kick[0];
-        const kickY = state.playY + kick[1];
+    for(let kick of kickData) {
+        const kickX: number = state.playX + kick[0];
+        const kickY: number = state.playY + kick[1];
 
         if(!gameUtils.checkBoxColl(kickX, kickY, state.board, getPiece(rot))) {
             state.playX = kickX;
@@ -243,8 +238,8 @@ const kick = (rot) => {
 // move or rotate a piece
 const move = (dx, drot) => {
     // update piece position values
-    let newX = state.playX + dx;
-    let newRot = state.playRot + drot;
+    let newX: number = state.playX + dx;
+    let newRot: number = state.playRot + drot;
 
     // clamp rotation
     newRot = newRot % 4;

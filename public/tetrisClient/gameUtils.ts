@@ -111,31 +111,31 @@ export const recolor = (grid: Grid, method: any): Grid => {
 // check if input placed at a given x and y will collide with base
 export const checkBoxColl = (x: number, y: number, base: Grid, input: Grid): boolean => {
     // check that the x and y are widthin the base
-    if(x < base.length && y < base[0].length) {
-        // check if there is a collision widthin the area of the input on the base at x and y
-        for(let i = x; i < x + input.length; i++) {
+    if(x >= base.length || y >= base[0].length)
+        return true;
 
-            for(let j = y; j < y + input[0].length; j++) {
-                let checkInput = input[i-x][j-y];
+    // check if there is a collision widthin the area of the input on the base at x and y
+    for(let i = x; i < x + input.length; i++) {
+        for(let j = y; j < y + input[0].length; j++) {
+            let checkInput: Box | null = input[i-x][j-y];
 
-                // check in the bounds of the base
-                if(i < base.length && j < base[0].length && i >= 0 && j >= 0) {
-                    let checkBase = base[i][j];
-
-                    // if there's nothing to hit then go to the next index
-                    if(checkBase == null || checkInput == null)
-                        continue;
-
-                    // if the input will hit a locked base box then a collision will occour
-                    if(checkBase.locked && !checkInput.locked)
-                        return true;
-                }
-                // check if the input part that's out of bounds is empty
-                else if(i-x >= 0 && j-y >= 0 && checkInput != null)
+            // check in the bounds of the base
+            if(i >= base.length || j >= base[0].length || i < 0 || j < 0) {
+                if(checkInput != null)
                     return true;
+                continue;
             }
+
+            let checkBase: Box | null = base[i][j];
+            
+            // if there's nothing to hit then go to the next index
+            if(checkBase == null || checkInput == null)
+                continue;
+
+            // if the input will hit a locked base box then a collision will occour
+            if(checkBase.locked && !checkInput.locked)
+                return true;
         }
-        return false;
     }
-    return true;
+    return false;
 }

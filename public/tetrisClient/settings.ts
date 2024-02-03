@@ -147,14 +147,16 @@ const saveButton = (event: Event): boolean => {
     // keep form from refreshing page pt1
     event.preventDefault();
 
-    for(let setting in localSettingList) {
-        let value: string | boolean = getUISetting(setting);
-        localSettingList[setting] = value;
-    }
     for(let setting in controlSettingList) {
         let value: string | boolean = getUISetting(setting);
         controlSettingList[setting] = value;
     }
+
+    if(session.isHost || !globalSettingList.forceSettings)
+        for(let setting in localSettingList) {
+            let value: string | boolean = getUISetting(setting);
+            localSettingList[setting] = value;
+        }
     if(session.isHost)
         for(let setting in globalSettingList) {
             let value: string | boolean = getUISetting(setting);
