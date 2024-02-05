@@ -1,4 +1,3 @@
-// modules
 import * as gameUtils from './gameUtils.ts';
 import * as utils from './utils.ts';
 import * as draw from './draw.ts';
@@ -6,8 +5,8 @@ import * as loop from './loop.ts';
 import * as input from'./input.ts';
 import * as settings from './settings.ts';
 // shared objects
-let session: any | null = null;
-let game: any | null = null;
+let session: any = null;
+let game: any = null;
 // page separation
 let divs: any = {
     rootDiv: null,
@@ -43,7 +42,7 @@ const tickMethod = () => {
     game.tick();
 
     const views: any[] = game.getViews().concat(getViews());
-    gameUtils.updateViews(views);
+    draw.updateViews(views);
 }
 
 // when another player joins add a board
@@ -230,8 +229,8 @@ export const init = (initSession: any, initGame: any) => {
     divs.rootDiv.appendChild(divs.controlsDiv);
 }
 
-export const getViews = () => {
-    let views: any[] = [];
+export const getViews = (): draw.view[] => {
+    let views: draw.view[] = [];
 
     for(let id in opponentState.boards)
         views.push(draw.newView(10, 20, 0, 20, opponentState.boards[id], opponentState.canvases[id]));

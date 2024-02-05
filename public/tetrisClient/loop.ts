@@ -1,11 +1,11 @@
 let tickrate: number | null = null
 let loop: boolean = false;
-let tickMethod: any = null;
+let tickMethod: Function | null = null;
 
 // update loop at set update per second
 const updateLoop = (ticksPerSecond: number) => {
     setTimeout(() => {
-        if(!loop)
+        if(!loop || !tickMethod)
             return;
 
         tickMethod();

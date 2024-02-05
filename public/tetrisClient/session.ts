@@ -1,7 +1,7 @@
 import * as utils from "./utils.ts";
-import { io } from "socket.io-client";
-const url = new URL(window.location.href);
-let socketSession: any | null = null;
+import * as gameUtils from "./gameUtils.ts";
+const url: URL = new URL(window.location.href);
+let socketSession: any = null;
 export let username: string | null = 'none';
 export let isHost: boolean = false;
 export let id: string | null = 'none';
@@ -68,16 +68,16 @@ export const requestBag = (): Promise<any> => {
 }
 
 // update the server with the state of the game in play
-export const stateUpdate = (board, lost) => {
+export const stateUpdate = (board: gameUtils.Grid, lost: boolean) => {
     utils.request({ player: socketSession.id, board: board, lost: lost, flag: 'match' }, url.origin + '/update');
 }
 
-export const usernameUpdate = (newUsername) => {
+export const usernameUpdate = (newUsername: string) => {
     username = newUsername;
     utils.request({ player: socketSession.id, username: newUsername, flag: 'username' }, url.origin + '/update');
 }
 
-export const bindEvent = (eventName, method) => {
+export const bindEvent = (eventName: string, method: Function) => {
     socketSession.on(eventName, method);
 }
 

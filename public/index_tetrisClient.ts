@@ -1,12 +1,12 @@
 const staticStyle = require('./style/staticStyle.css');
-import { io } from "socket.io-client";
-const socket = io(window.location.origin);
+import * as socketIO from "socket.io-client";
+const socket = socketIO.io(window.location.origin);
 import * as game from './tetrisClient/game.ts';
 import * as lobby from './tetrisClient/lobby.ts';
 import * as session from './tetrisClient/session.ts';
 
 // set SocketIO event methods
-let setEvents = (session) => {
+let setEvents = (session: any) => {
     session.bindEvent('update', lobby.events.update);
     session.bindEvent('start', lobby.events.start);
     session.bindEvent('pause', lobby.events.pause);

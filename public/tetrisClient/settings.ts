@@ -1,5 +1,5 @@
 // shared objects
-let session: any | null = null;
+let session: any = null;
 
 // html elements
 let settingsModal: HTMLDivElement | null = null;
@@ -176,7 +176,7 @@ const setSettings = () => {
     // set general settings
     for(let setting in localSettingList) {
         let value: string | boolean = localSettingList[setting];
-        let method: any | null = settingMethods[setting];
+        let method: Function | null = settingMethods[setting];
         
         if(method)
             method(value);
@@ -222,14 +222,14 @@ const setCookieSettings = () => {
 const getCookieSettings = (): boolean => {
     // extract cookie
     const cookieName: string = 'settings'
-    let c: string | undefined = document.cookie.split(';').find( item => item.trim().startsWith(`${cookieName}=`) );
+    let cookieString: string | undefined = document.cookie.split(';').find( item => item.trim().startsWith(`${cookieName}=`) );
 
     // do nothing if the cookie does not exist
-    if(!c)
+    if(!cookieString)
         return false;
 
     // convert the JSON cookie string into an object
-    let settingsCookie: any = JSON.parse(c.substring(`${cookieName}=`.length, c.length));
+    let settingsCookie: any = JSON.parse(cookieString.substring(`${cookieName}=`.length, cookieString.length));
 
     // do nothing if the cookie is outdated
     if(settingsCookie.version != cookieVersion)
@@ -365,13 +365,13 @@ export const exportSettings = (): any => {
 }
 
 // apply settings received from server and return game settings object
-export const applySettings = (server: any): any => {
+export const applySettings = (remoteSettings: any): any => {
     // sync settings to host
-    if(server.global.forceSettings) {
-        localSettingList.autorepeatDelay = server.local.autorepeatDelay;
-        localSettingList.autorepeatSpeed = server.local.autorepeatSpeed;
+    if(remoteSettings.global.forceSettings) {
+        localSettingList.autorepeatDelay = remoteSettings.local.autorepeatDelay;
+        localSettingList.autorepeatSpeed = remoteSettings.local.autorepeatSpeed;
     }
-    globalSettingList = server.global;
+    globalSettingList = remoteSettings.global;
 
     setSettings();
 
@@ -383,7 +383,7 @@ export const applySettings = (server: any): any => {
 }
 
 // set setting method
-export const bindSetting = (setting: string, method: any, control: boolean) => {
+export const bindSetting = (setting: string, method: Function, control: boolean) => {
     if(control)
         controlSettingMethods[setting] = method;
     else

@@ -1,5 +1,3 @@
-import * as draw from './draw.ts';
-
 // color type
 export type Color = {
     r: number,
@@ -10,30 +8,19 @@ export type Color = {
 // grid box type
 export type Box = {
     color: Color,
-    locked: boolean,
-    effect: any
+    locked: boolean
 }
 
 // grid type
 export type Grid = (Box | null)[][];
 
-// update the contents of all the canvases with data from the passed array
-export const updateViews = (views: any) => {
-    views.forEach((view) => {
-        draw.cls(view.canvas);
-        draw.drawGrid(view.viewportW, view.viewportH, view.startX, view.startY, view.board, view.canvas);
-    });
-}
-
 // box factory
-export const newBox = (locked: boolean, color: Color, effect?: any): Box => {
+export const newBox = (locked: boolean, color: Color): Box => {
     // color is css color
     // locked tells if the box needs to be moved down by gravity or if it's settled
-    // graphical effects applied to the box, mainly changing color a bit to indicate that the box is locking in place
     return {
         color,
-        locked,
-        effect
+        locked
     }
 }
 

@@ -1,10 +1,10 @@
-let keyMap: any = {};                    // map keys to methods
+let keyMap: any = {};               // map keys to methods
 let rolloverMs: number = -1;        // how long to hold a key before repeat inputs
 let rolloverSpeed: number = -1;     // how fast to repeat inputs
 
 // the state of a control (key)
 export type KeyState = {
-    action: any,            // method called for each keypress or rollover keypress
+    action: Function,       // method called for each keypress or rollover keypress
     down: boolean,          // is the key currently down
     rollover: boolean,      // has the key started rollover keystrokes
     doRollover: boolean,    // does the key auto keystroke after a certain time
@@ -14,7 +14,7 @@ export type KeyState = {
 }
 
 // keystate object
-const newKeyState = (action: any, doRollover: boolean): KeyState => {
+const newKeyState = (action: Function, doRollover: boolean): KeyState => {
     return {
         action: action,
         down: false,
@@ -31,7 +31,7 @@ export const setRollover = (delay: number, speed: number) => {
     rolloverSpeed = speed;
 }
 
-export const bindKey = (key: string, action: any, doRollover: boolean) => {
+export const bindKey = (key: string, action: Function, doRollover: boolean) => {
     keyMap[key] = newKeyState(action, doRollover);
 }
 
@@ -49,7 +49,7 @@ export const checkKeys = () => {
     for(let k in keyMap) {
         // get state and function for key
         const keyState: KeyState = keyMap[k];
-        const keyFunction: any = keyMap[k].action;
+        const keyFunction: Function = keyMap[k].action;
 
         // check if key is held long enough for rollover
         if(keyState.doRollover && keyState.down) {

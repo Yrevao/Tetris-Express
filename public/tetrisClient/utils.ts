@@ -21,17 +21,18 @@ export const request = (data: any, url: string, get?: boolean): Promise<any> => 
 }
 
 // create button and add it as a child to another DOM element
-export const newButton = (text: string, method: any, id: string, parentNode: any): HTMLButtonElement => {
+export const newButton = (text: string, method: Function, id: string, parentNode: any): HTMLButtonElement => {
     let oldButton: HTMLElement | null = document.getElementById(id);
     if(oldButton)
         oldButton.remove();
 
+    let clickMethod = method as ((this: GlobalEventHandlers, ev: MouseEvent) => any)
     let button: HTMLButtonElement = document.createElement('button');
 
     button.className = 'buttons';
     button.id = id;
     button.textContent = text;
-    button.onclick = method;
+    button.onclick = clickMethod;
     parentNode.appendChild(button);
 
     return button;
