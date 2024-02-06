@@ -25,6 +25,7 @@ const resetMatch = (matchId: string) => {
     let match: Match = s_match.findByKey(matchId);
 
     match.bags = [];
+    match.paused = false;
     match.started = false;
 
     s_match.findByKeyAndOverwrite(matchId, match);
