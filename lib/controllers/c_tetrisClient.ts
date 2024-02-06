@@ -35,6 +35,30 @@ const resetMatch = (matchId: string) => {
     s_player.findManyByPropertyAndUpdate('match', matchId, 'bagCount', 0);
 }
 
+// update with match flag, return if all players have lost
+const matchUpdate = (player: Player, matchId: string, board: any[][], lost: boolean): boolean => {
+    // update the match data in the player's schema
+    player.board = board;
+    player.lost = lost;
+
+    // check if all the players have lost
+    let players: Map<string, Player> = s_player.findManyByProperty('match', matchId);
+    
+    let allLost: boolean = true;
+    for(let item of players) {
+        let player: Player = item[1];
+
+        if(!player.lost) {
+            allLost = false;
+            break;
+        }
+    }
+    if(allLost)
+        return true;
+
+    return false
+}
+
 module.exports.init = (req: express.Request, res: express.Response) => {
     const locals = { title: 'Tetris Express', bundle: 'bundle_tetrisClient.js' };
 
@@ -122,14 +146,16 @@ module.exports.updateState = (req: express.Request, res: express.Response, io: s
 
     switch(flag) {
         case 'match':
-            if(!req.body.board || typeof req.body.lost == typeof undefined) {
+            // null check
+            if(!req.body.board || req.body.lost == undefined) {
                 res.json({status: 'ok'});
                 return;
             }
-
-            // update the match data in the player's schema
-            player.board = req.body.board;
-            player.lost = req.body.lost;
+            // update schemas and check if game is over
+            else if(matchUpdate(player, matchId, req.body.board, req.body.lost)) {
+                resetMatch(matchId);
+                io.to(matchId).emit('reset');
+            }
             break;
         case 'username':
             if(!req.body.username) {
@@ -145,24 +171,6 @@ module.exports.updateState = (req: express.Request, res: express.Response, io: s
     s_player.findByKeyAndOverwrite(playerId, player);
 
     io.to(matchId).emit('update', {flag: 'update', player: playerId, board: player.board, username: player.username, lost: req.body.lost});
-
-    // check if all the players have lost
-    let players: Map<string, Player> = s_player.findManyByProperty('match', matchId);
-    
-    let allLost: boolean = true;
-    for(let item of players) {
-        let id: string = item[0];
-        let player: Player = item[1];
-
-        if(!player.lost) {
-            allLost = false;
-            break;
-        }
-    }
-    if(allLost) {
-        resetMatch(matchId);
-        io.to(matchId).emit('reset');
-    }
 
     res.json({status: 'ok'});
 }

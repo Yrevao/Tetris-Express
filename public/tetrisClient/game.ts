@@ -213,10 +213,11 @@ const lockPlay = () => {
 
 // move all not locked blocks in the grid down one
 const doGravity = () => {
-    clearPlay(false);
     // null checks
     if(!state.gravityTime)
         return;
+
+    clearPlay(false);
 
     // how far to move a piece
     let gravityDebt = Math.floor((Date.now() - state.playLastGravity) / state.gravityTime);
@@ -297,12 +298,6 @@ const formatPlayTime = (time?: number): string => {
     const min: number = Math.floor(sec / 60);
 
     return `${min}:${sec % 60}:${duration % 1000}`;
-}
-
-// when the game is unpaused some time has passed and all the state timers need to be updated
-const resync = (pauseTime: number) => {
-    state.playLastGravity += pauseTime;
-    state.start += pauseTime;
 }
 
 const setScore = (score: HTMLSpanElement | null, value: number | string) => {
@@ -485,6 +480,11 @@ export const pause = (paused: boolean) => {
 
     if(paused)
         state.pauseTime = Date.now();
-    else
-        resync(Date.now() - state.pauseTime);
+    else {
+        // how long the game has been paused for in ms
+        let pauseTime: number = Date.now() - state.pauseTime;
+        // update timers to account for the time gap when paused
+        state.playLastGravity += pauseTime;
+        state.start += pauseTime;
+    }
 }

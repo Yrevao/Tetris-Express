@@ -173,6 +173,9 @@ const saveButton = (event: Event): boolean => {
 
 // save settings and run relevant methods
 const setSettings = () => {
+    // a method run before the settings are set; is set to clear all keybinds before settings new ones in lobby.ts
+    settingMethods.before();
+
     // set general settings
     for(let setting in localSettingList) {
         let value: string | boolean = localSettingList[setting];

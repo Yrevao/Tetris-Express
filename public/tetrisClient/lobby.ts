@@ -137,6 +137,7 @@ const becomeHost = () => {
 
 // set settings methods
 const setSettingBinds = () => {
+    settings.bindSetting('before', events.settingClearBinds, false);
     settings.bindSetting('usernameSetting', events.settingUsername, false);
     settings.bindSetting('final', events.settingRollover, false);
 
@@ -153,10 +154,11 @@ const setSettingBinds = () => {
 export const events = {
     update: (data: any) => {
         // update the opponent boards only if the update is for another player
-        if(data.player == session.id)
+        if(data.player == session.id) {
+            if(data.lost)
+                loop.stop();
             return;
-        else if(data.player == session.id && data.lost)
-            loop.stop();
+        }
 
         switch(data.flag) {
             case 'init':
@@ -195,6 +197,9 @@ export const events = {
     end: (data: any) => {
         game.pause(true);
         loop.stop();
+    },
+    settingClearBinds: () => {
+        input.clearBinds();
     },
     settingUsername: (name: string) => {
         session.usernameUpdate(name);
