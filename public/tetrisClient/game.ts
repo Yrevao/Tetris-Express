@@ -169,14 +169,16 @@ const clearLines = () => {
     }
 }
 
-// find the lowest y value the in play piece can drop to without hitting anything  
-const dropPlay = (): number => {
-    for(let y = state.playY; y < view.boardH; y++) {
+// find the lowest y value the in play piece can drop to without hitting anything
+const dropPlay = (max?: number): number => {
+    const maxY: number = max ? max + 1 : view.boardH
+
+    for(let y = state.playY; y < maxY; y++) {
         if(gameUtils.checkBoxColl(state.playX, y, state.board, getPiece()))
             return y - 1;
     }
 
-    return view.boardH - 1;
+    return maxY - 1;
 }
 
 // called when the game is lost due to pieces being placed outside of the visible board
@@ -224,12 +226,13 @@ const doGravity = () => {
 
     // check if enought time has passed to move the piece down
     if(gravityDebt >= 1) {
+        const newY: number = dropPlay(state.playY + gravityDebt);
         state.playLastGravity = Date.now();
 
         // check if piece can drop without collision
-        if(!gameUtils.checkBoxColl(state.playX, state.playY + gravityDebt, state.board, getPiece())) {
+        if(newY - state.playY > 0) {
             state.playLandTime = -1;
-            state.playY += gravityDebt;
+            state.playY = newY;
         }
         // if the piece has landed then check for how long
         else {
@@ -316,7 +319,7 @@ export const events = {
             move(1, 0);
     },
     rotLeft: (k: input.KeyState) => {
-        if(k.down)    
+        if(k.down)
             move(0, 3);
     },
     rotRight: (k: input.KeyState) => {
