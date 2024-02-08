@@ -7,6 +7,7 @@ export let isHost: boolean = false;
 export let id: string | null = 'none';
 export let match: string | null = 'none';
 
+// request a new username to be generated on the server
 export const getNewUsername = (): Promise<any> => {
     return new Promise((resolve, reject) => {
         utils.request({ method: 'username' }, url.origin + '/utils')
@@ -72,15 +73,29 @@ export const stateUpdate = (board: gameUtils.Grid, lost: boolean) => {
     utils.request({ player: socketSession.id, board: board, lost: lost, flag: 'match' }, url.origin + '/update');
 }
 
+// update server with current player username
 export const usernameUpdate = (newUsername: string) => {
     username = newUsername;
     utils.request({ player: socketSession.id, username: newUsername, flag: 'username' }, url.origin + '/update');
 }
 
+// set a SocketIO socket event to a method
 export const bindEvent = (eventName: string, method: Function) => {
     socketSession.on(eventName, method);
 }
 
+// set the host flag to true, host flag determines which UI elements are used
 export const becomeHost = () => {
     isHost = true;
+}
+
+// start the match with settings and pause/unpause the match
+export const controlFlow = (settings?: any | undefined) => {
+    if(!isHost)
+        return;
+
+    if(settings)
+        utils.request({ player: id, settings: settings }, window.location.origin + '/start');
+    else
+        utils.request({ player: id }, window.location.origin + '/pause');
 }

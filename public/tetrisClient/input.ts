@@ -27,9 +27,13 @@ const newKeyState = (action: Function, doRollover: boolean): KeyState => {
 }
 
 // set rollover rate, how long a key has to be held for autorepeat and how fast to autorepeat
-export const setRollover = (delay: number, speed: number) => {
-    rolloverMs = delay;
-    rolloverSpeed = speed;
+export const setRollover = (delay?: number, speed?: number) => {
+    if(delay)
+        rolloverMs = delay;
+    if(speed)
+        rolloverSpeed = speed;
+
+    console.log(rolloverMs + ' ' + rolloverSpeed)
 }
 
 // clear all keybinds

@@ -88,21 +88,20 @@ const update = (playerId: string, board: any[], username: string) => {
 }
 
 // start the match
-const startMatch = () => {
-    utils.request({player: session.id, settings: settings.exportSettings()}, window.location.origin + '/start');
+const startMatchButton = () => {
+    session.controlFlow(settings.exportSettings());
 }
 
 // pause match
-const pauseMatch = () => {
-    if(session.isHost)
-        utils.request({ player: session.id }, window.location.origin + '/pause');
+const pauseMatchButton = () => {
+    session.controlFlow();
 }
 
 // give player host UI elements (start/end button)
 const setHostUi = () => {
     // start and pause button
-    utils.newButton('New Game', startMatch, 'startbutton', divs.controlsDiv);
-    utils.newButton('Pause', pauseMatch, 'pauseButton', divs.controlsDiv);
+    utils.newButton('New Game', startMatchButton, 'startbutton', divs.controlsDiv);
+    utils.newButton('Pause', pauseMatchButton, 'pauseButton', divs.controlsDiv);
 }
 
 // place universal ui elements
@@ -139,7 +138,8 @@ const becomeHost = () => {
 const setSettingBinds = () => {
     settings.bindSetting('before', events.settingClearBinds, false);
     settings.bindSetting('usernameSetting', events.settingUsername, false);
-    settings.bindSetting('final', events.settingRollover, false);
+    settings.bindSetting('autorepeatDelay', events.settingRolloverDelay, false);
+    settings.bindSetting('autorepeatSpeed', events.settingRolloverSpeed, false);
 
     settings.bindSetting('moveLeft', (key) => input.bindKey(key, game.events.left, true), true);
     settings.bindSetting('moveRight', (key) => input.bindKey(key, game.events.right, true), true);
@@ -205,8 +205,11 @@ export const events = {
         session.usernameUpdate(name);
         game.updateUsername(name);
     },
-    settingRollover: (delay: number, speed: number) => {
-        input.setRollover(delay, speed);
+    settingRolloverDelay: (delay: number) => {
+        input.setRollover(delay, undefined);
+    },
+    settingRolloverSpeed: (speed: number) => {
+        input.setRollover(undefined, speed);
     }
 }
 
@@ -234,8 +237,8 @@ export const init = (initSession: any, initGame: any) => {
     divs.rootDiv.appendChild(divs.controlsDiv);
 }
 
-export const getViews = (): draw.view[] => {
-    let views: draw.view[] = [];
+export const getViews = (): draw.View[] => {
+    let views: draw.View[] = [];
 
     for(let id in opponentState.boards)
         views.push(draw.newView(10, 20, 0, 20, opponentState.boards[id], opponentState.canvases[id]));

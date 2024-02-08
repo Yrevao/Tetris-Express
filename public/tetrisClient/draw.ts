@@ -1,7 +1,7 @@
 import * as utils from './gameUtils.ts';
 
 // view type
-export type view = {
+export type View = {
     viewportW: number,
     viewportH: number,
     startX: number,
@@ -11,7 +11,7 @@ export type view = {
 }
 
 // view objects
-export const newView = (viewW: number, viewH: number, x: number, y: number, grid: utils.Grid, targetCanvas: HTMLCanvasElement): any => {
+export const newView = (viewW: number, viewH: number, x: number, y: number, grid: utils.Grid, targetCanvas: HTMLCanvasElement): View => {
     return {
         viewportW: viewW,
         viewportH: viewH,
@@ -73,8 +73,8 @@ export const cls = (playfieldCanvas: HTMLCanvasElement) => {
 }
 
 // update the contents of all the canvases with data from the passed array
-export const updateViews = (views: view[]) => {
-    views.forEach((aView: view) => {
+export const updateViews = (views: View[]) => {
+    views.forEach((aView: View) => {
         cls(aView.canvas);
         drawGrid(aView.viewportW, aView.viewportH, aView.startX, aView.startY, aView.board, aView.canvas);
     });

@@ -292,7 +292,8 @@ const move = (dx, drot) => {
 }
 
 // return min:sec:ms of how long the game has been running
-const formatPlayTime = (time?: number): string => {
+const formatPlayTime = (time?: number, start?: number): string => {
+    state.start = (start ? start : state.start);
     let duration: number = Date.now() - state.start;
     if(time)
         duration = time;
@@ -404,7 +405,7 @@ export const init = (initSession: any) => {
         <br>
         <span>PPS </span><span id="pps">${state.pps}</span>
         <br>
-        <span>Time </span><span id="time">${formatPlayTime(0)}</span>
+        <span>Time </span><span id="time">${formatPlayTime(0, Date.now())}</span>
     `
     root.appendChild(scoreBoard);
 
@@ -433,7 +434,7 @@ export const start = async (startSettings: any) => {
     setScore(scores.locksScore, 0);
     setScore(scores.linesScore, 0);
     setScore(scores.ppsScore, 0);
-    setScore(scores.timeScore, formatPlayTime(0));
+    setScore(scores.timeScore, formatPlayTime(0, Date.now()));
 
     settings = startSettings;
     state.gravityTime = settings.levelGravity;
@@ -450,7 +451,7 @@ export const tick = () => {
 }
 
 // return canvas and state info for updating graphics
-export const getViews = (): draw.view[] => {
+export const getViews = (): draw.View[] => {
     // check that canvases are defined
     if(!view.boardCanvas || !view.holdCanvas || !view.nextCanvas)
         return [];
@@ -465,9 +466,9 @@ export const getViews = (): draw.view[] => {
         gameUtils.stamp(0, i*3, nextGrid, blockStore.idToLetter[state.bag[1+i]](0));
 
     // define views
-    const gameView: draw.view = draw.newView(10, 20, 0, 20, state.board, view.boardCanvas);
-    const holdView: draw.view = draw.newView(4, 2, 0, 0, holdGrid, view.holdCanvas);
-    const nextView: draw.view = draw.newView(4, 14, 0, 0, nextGrid, view.nextCanvas);
+    const gameView: draw.View = draw.newView(10, 20, 0, 20, state.board, view.boardCanvas);
+    const holdView: draw.View = draw.newView(4, 2, 0, 0, holdGrid, view.holdCanvas);
+    const nextView: draw.View = draw.newView(4, 14, 0, 0, nextGrid, view.nextCanvas);
 
     return [gameView, holdView, nextView];
 }

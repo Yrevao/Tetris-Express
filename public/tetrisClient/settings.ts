@@ -93,8 +93,8 @@ let globalSettingHTML: string = `
 `
 
 // settings menu methods
-let settingMethods: any = {};
-let controlSettingMethods: any = {};
+let settingMethods: Map<string, Function> = new Map();
+let controlSettingMethods: Map<string, Function> = new Map();
 
 const getUISetting = (setting: string): string | boolean => {
     const settingElement: HTMLInputElement | null = (document.getElementById(setting) as HTMLInputElement | null);
@@ -174,13 +174,15 @@ const saveButton = (event: Event): boolean => {
 // save settings and run relevant methods
 const setSettings = () => {
     // a method run before the settings are set; is set to clear all keybinds before settings new ones in lobby.ts
-    settingMethods.before();
+    let beforeMethod: Function | undefined = settingMethods.get('before');
+    if(beforeMethod)
+        beforeMethod();
 
     // set general settings
     for(let setting in localSettingList) {
         let value: string | boolean = localSettingList[setting];
-        let method: Function | null = settingMethods[setting];
-        
+        let method: Function | undefined = settingMethods.get(setting);
+
         if(method)
             method(value);
     }
@@ -188,11 +190,11 @@ const setSettings = () => {
     // set controls
     for(let control in controlSettingList) {
         let value: string | boolean = controlSettingList[control];
-        controlSettingMethods[control](value);
-    }
+        let method: Function | undefined = controlSettingMethods.get(control);
 
-    // final method that depends on multiple settings
-    settingMethods.final(localSettingList.autorepeatDelay, localSettingList.autorepeatSpeed);
+        if(method)
+            method(value);
+    }
 }
 
 // set events for the controls settings
@@ -388,9 +390,9 @@ export const applySettings = (remoteSettings: any): any => {
 // set setting method
 export const bindSetting = (setting: string, method: Function, control: boolean) => {
     if(control)
-        controlSettingMethods[setting] = method;
+        controlSettingMethods.set(setting, method);
     else
-        settingMethods[setting] = method;
+        settingMethods.set(setting, method);
 }
 
 // settings elements that depend on server side data
