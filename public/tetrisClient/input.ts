@@ -32,8 +32,6 @@ export const setRollover = (delay?: number, speed?: number) => {
         rolloverMs = delay;
     if(speed)
         rolloverSpeed = speed;
-
-    console.log(rolloverMs + ' ' + rolloverSpeed)
 }
 
 // clear all keybinds

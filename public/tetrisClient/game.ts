@@ -6,11 +6,11 @@ import * as input from './input.ts'
 let session: any | null = null;
 // canvas config and data
 let view: {
-    boardW: number,
-    boardH: number,
-    boardCanvas: HTMLCanvasElement | null,
-    holdCanvas: HTMLCanvasElement | null,
-    nextCanvas: HTMLCanvasElement | null,
+    boardW: number,                         // width of game board grid
+    boardH: number,                         // height of game board grid
+    boardCanvas: HTMLCanvasElement | null,  // DOM element of the game board display canvas
+    holdCanvas: HTMLCanvasElement | null,   // DOM element for the hold display canvas
+    nextCanvas: HTMLCanvasElement | null,   // DOM element for the next piece display canvas
 } = {
     boardW: 10,
     boardH: 40,
@@ -20,11 +20,11 @@ let view: {
 }
 // scoreboard data
 let scores: {
-    usernameScore: HTMLSpanElement | null,
-    locksScore: HTMLSpanElement | null,
-    linesScore: HTMLSpanElement | null,
-    ppsScore: HTMLSpanElement | null,
-    timeScore: HTMLSpanElement | null,
+    usernameScore: HTMLSpanElement | null,  // player's username
+    locksScore: HTMLSpanElement | null,     // total pieces placed on the board
+    linesScore: HTMLSpanElement | null,     // number of line clears
+    ppsScore: HTMLSpanElement | null,       // pieces placed per second
+    timeScore: HTMLSpanElement | null,      // how long the game has been running in format "min:sec:ms"
 } = {
     usernameScore: null,
     locksScore: null,
@@ -33,10 +33,14 @@ let scores: {
     timeScore: null,
 }
 // gameplay settings
-let settings: any = {
-    levelGravity: 1000 / 5,     // fall speed of current level
-    softDropGravity: 1000 / 80, // fall speed of soft drop
-    lockDelay: 500              // how long a piece takes to lock after landing in ms
+let settings: {
+    levelGravity: number,                   // fall speed of current level
+    softDropGravity: number,                // fall speed of soft drop
+    lockDelay: number                       // how long a piece takes to lock after landing in ms
+} = {
+    levelGravity: 1000 / 5,
+    softDropGravity: 1000 / 80,
+    lockDelay: 500
 }
 // game state
 let state: {
@@ -304,6 +308,7 @@ const formatPlayTime = (time?: number, start?: number): string => {
     return `${min}:${sec % 60}:${duration % 1000}`;
 }
 
+// set scoreboard dom element to a value
 const setScore = (score: HTMLSpanElement | null, value: number | string) => {
     if(score)
         score.textContent = value.toString();

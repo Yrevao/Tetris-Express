@@ -67,7 +67,7 @@ export class Schema<model> {
         let updated: number = 0;
 
         this.#store.forEach((doc, key) => {
-            if(doc[findProperty] != findValue) {
+            if(doc[findProperty] == findValue) {
                 doc[updateProperty] = updateValue;
                 this.#store.set(key, doc);
                 updated++;

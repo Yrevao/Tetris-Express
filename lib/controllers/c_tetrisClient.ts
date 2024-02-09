@@ -127,9 +127,8 @@ module.exports.nextBag = (req: express.Request, res: express.Response) => {
         s_match.findByKeyAndUpdate(player.match, 'bags', currentBags);
     }
     // the needed bag has already been generated
-    else {
+    else
         bag = currentBags[currentBag - 1];
-    }
 
     res.json({bag: bag});
 }
@@ -177,10 +176,20 @@ module.exports.updateState = (req: express.Request, res: express.Response, io: s
 }
 
 module.exports.startMatch = (req: express.Request, res: express.Response, io: socketIO.Server) => {
-    let player: Player | undefined = s_player.findByKey(req.body.player);
-    let setting_sevenBag: boolean | undefined = req.body.settings.global.sevenBag;
+    type SettingValue = string | number | boolean;
+
+    // null checks
     let settings: any = req.body.settings;
-    if(!player || !setting_sevenBag || !settings || !player.host) {
+    let player: Player | undefined = s_player.findByKey(req.body.player);
+    if(!settings || !settings.global || !player) {
+        res.json({status: 'ok'});
+        return;
+    }
+
+    // extract sevenBag setting from settings object
+    let settings_global: Map<string, SettingValue> = new Map(settings.global);
+    let setting_sevenBag: SettingValue | undefined = settings_global.get('sevenBag');
+    if(setting_sevenBag == undefined || !player.host) {
         res.json({status: 'ok'});
         return;
     }
@@ -190,11 +199,12 @@ module.exports.startMatch = (req: express.Request, res: express.Response, io: so
     // set match settings
     let match: Match = s_match.findByKey(player.match);
 
-    match.sevenBag = setting_sevenBag;
+    match.sevenBag = setting_sevenBag as boolean;
     match.started = true;
 
     s_match.findByKeyAndOverwrite(player.match, match);
 
+    // emit match start event to all players in match
     io.to(player.match).emit('start', settings);
     res.json({status: 'ok'});
 }
