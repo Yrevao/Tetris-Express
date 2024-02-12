@@ -25,14 +25,14 @@ export const newBox = (locked: boolean, color: Color): Box => {
 }
 
 // box 2d array factory
-export const newGrid = (width: number, height: number, filler?: any): Grid => {
-    let outGrid: Box[][] = [];
+export const newGrid = (width: number, height: number, filler?: Box): Grid => {
+    let outGrid: Grid = [];
 
     for (let i = 0; i < width; i++) {
-        let row: Box[] | null = [];
+        let row: (Box | null)[] = [];
 
         for (let j = 0; j < height; j++) {
-            row.push(filler);
+            row.push(filler ? filler : null);
         }
 
         outGrid.push(row);
@@ -80,7 +80,7 @@ export const stamp = (x: number, y: number, base: Grid, input: Grid): Grid => {
 }
 
 // recolor blocks in a grid; method arguments: (originalColor) => return newColor
-export const recolor = (grid: Grid, method: any): Grid => {
+export const recolor = (grid: Grid, method: Function): Grid => {
     for(let i in grid) {
         for(let j in grid[i]) {
             let b: Box | null = grid[i][j];

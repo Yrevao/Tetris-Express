@@ -71,7 +71,7 @@ const join = (playerId: string, username: string) => {
 }
 
 // update the displayed stats when another player places a piece or changes username
-const update = (playerId: string, board: any[], username: string) => {
+const update = (playerId: string, board: gameUtils.Grid, username: string) => {
     opponentState.boards[playerId] = board;
 
     // update username if it's been changed

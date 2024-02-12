@@ -124,7 +124,7 @@ const nextPiece = () => {
     // go to the next piece in bag
     if(state.bag.length <= 21) {
         session.requestBag()
-            .then((nextBag: any) => {
+            .then((nextBag: number[]) => {
                 state.bag = state.bag.concat(nextBag);
             });
     }

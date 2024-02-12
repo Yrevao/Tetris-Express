@@ -2,35 +2,35 @@
 import * as utils from './gameUtils.ts';
 
 // super rotation system (SRS) wall kick tables
-const kickMatrix: any = {
-    '01': [ [0,0],[-1,0],[-1,1],[0,-2],[-1,-2] ],
-    '10': [	[0,0],[1,0],[1,-1],[0,2],[1,2] ],
-    '12': [ [0,0],[1,0],[1,-1],[0,2],[1,2] ],
-    '21': [ [0,0],[-1,0],[-1,1],[0,-2],[-1,-2] ],
-    '23': [ [0,0],[1,0],[1,1],[0,-2],[1,-2] ],
-    '32': [ [0,0],[-1,0],[-1,-1],[0,2],[-1,2] ],
-    '30': [ [0,0],[-1,0],[-1,-1],[0,2],[-1,2] ],
-    '03': [ [0,0],[1,0],[1,1],[0,-2],[1,-2] ]
-}
-const iKickMatrix: any = {
-    '01': [ [0,0],[-2,0],[1,0],[-2,-1],[1,2] ],
-    '10': [ [0,0],[2,0],[-1,0],[2,1],[-1,-2] ],
-    '12': [ [0,0],[-1,0],[2,0],[-1,2],[2,-1] ],
-    '21': [ [0,0],[1,0],[-2,0],[1,-2],[-2,1] ],
-    '23': [ [0,0],[2,0],[-1,0],[2,1],[-1,-2] ],
-    '32': [ [0,0],[-2,0],[1,0],[-2,-1],[1,2] ],
-    '30': [ [0,0],[1,0],[-2,0],[1,-2],[-2,1] ],
-    '03': [ [0,0],[-1,0],[2,0],[-1,2],[2,-1] ]
-}
+const kickMatrix: Map<string, number[][]> = new Map([
+    ['01', [ [0,0],[-1,0],[-1,1],[0,-2],[-1,-2] ] ],
+    ['10', [ [0,0],[1,0],[1,-1],[0,2],[1,2]     ] ],
+    ['12', [ [0,0],[1,0],[1,-1],[0,2],[1,2]     ] ],
+    ['21', [ [0,0],[-1,0],[-1,1],[0,-2],[-1,-2] ] ],
+    ['23', [ [0,0],[1,0],[1,1],[0,-2],[1,-2]    ] ],
+    ['32', [ [0,0],[-1,0],[-1,-1],[0,2],[-1,2]  ] ],
+    ['30', [ [0,0],[-1,0],[-1,-1],[0,2],[-1,2]  ] ],
+    ['03', [ [0,0],[1,0],[1,1],[0,-2],[1,-2]    ] ],
+]);
+const iKickMatrix: Map<string, number[][]> = new Map([
+    ['01', [ [0,0],[-2,0],[1,0],[-2,-1],[1,2]   ] ],
+    ['10', [ [0,0],[2,0],[-1,0],[2,1],[-1,-2]   ] ],
+    ['12', [ [0,0],[-1,0],[2,0],[-1,2],[2,-1]   ] ],
+    ['21', [ [0,0],[1,0],[-2,0],[1,-2],[-2,1]   ] ],
+    ['23', [ [0,0],[2,0],[-1,0],[2,1],[-1,-2]   ] ],
+    ['32', [ [0,0],[-2,0],[1,0],[-2,-1],[1,2]   ] ],
+    ['30', [ [0,0],[1,0],[-2,0],[1,-2],[-2,1]   ] ],
+    ['03', [ [0,0],[-1,0],[2,0],[-1,2],[2,-1]   ] ],
+]);
 
 // get a set of kicks based on if the piece is an I piece and the rotation being performed
 export const getKickData = (minoId: number, startRot: number, endRot: number): number[][] => {
     const rotState: string = `${startRot}${endRot}`;
-
-    if(minoId == 0)
-        return iKickMatrix[rotState];
-
-    return kickMatrix[rotState];
+    const kickArr: number[][] | undefined = 
+        minoId == 0 ? iKickMatrix.get(rotState) : kickMatrix.get(rotState);
+    
+    // if the rotation doesn't exist don't kick
+    return kickArr ? kickArr : [[0,0]];
 }
 
 export const i = (rot: number): utils.Grid => {
@@ -214,5 +214,5 @@ export const z = (rot: number): utils.Grid => {
     return block;
 }
 
-export const idToLetter: any[] = [i, j, l, o, s, t, z];
+export const idToLetter: Function[] = [i, j, l, o, s, t, z];
 export const idToColor: utils.Color[] = [utils.newColor(0,255,255), utils.newColor(0,0,255), utils.newColor(255,170,0), utils.newColor(255,255,0), utils.newColor(0,255,0), utils.newColor(153,0,254), utils.newColor(255,0,0)];
