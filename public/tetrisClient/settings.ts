@@ -6,7 +6,7 @@ let settingsModal: HTMLDivElement | null = null;
 
 // settings data objects
 const cookieName: string = 'settings';
-const cookieVersion: string = '1.0.1';
+const cookieVersion: string = '1.0.2';
 
 // types
 type SettingValue = string | number | boolean;          // type for the value of settings when saved to maps
@@ -91,7 +91,7 @@ let globalSettingHTML: string = `
         <input type="checkbox" id="forceSettings">
     <br>
     <label for="sevenBag">7-Bag RNG:</label>
-        <input type="checkbox" id="sevenBag" checked="true">
+        <input type="checkbox" id="sevenBag">
     <br>
     <label for="gravity">Gravity cells per second</label>
         <input type="number" required minlength="1" id="gravity"></input>
@@ -124,7 +124,7 @@ const getUISetting = (setting: string): string | boolean => {
 
 // set setting only in UI
 const setUISetting = (setting: string, value: SettingValue): boolean => {
-    const settingElement: HTMLInputElement | null = (document.getElementById(setting) as HTMLInputElement | null);
+    let settingElement: HTMLInputElement | null = (document.getElementById(setting) as HTMLInputElement | null);
 
     if(!settingElement)
         return false;
