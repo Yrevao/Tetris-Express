@@ -3,7 +3,7 @@ import * as blockStore from './blockStore.ts';
 import * as draw from './draw.ts';
 import * as input from './input.ts'
 // shared objects
-let session: any | null = null;
+let session: any = null;
 // canvas config and data
 let view: {
     boardW: number,                         // width of game board grid
