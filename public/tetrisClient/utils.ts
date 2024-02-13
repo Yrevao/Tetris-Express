@@ -21,7 +21,7 @@ export const request = (data: any, url: string, get?: boolean): Promise<any> => 
 }
 
 // create button and add it as a child to another DOM element
-export const newButton = (text: string, method: Function, id: string, parentNode: any): HTMLButtonElement => {
+export const newButton = (text: string, method: Function, id: string, parentNode: HTMLElement): HTMLButtonElement => {
     let oldButton: HTMLElement | null = document.getElementById(id);
     if(oldButton)
         oldButton.remove();

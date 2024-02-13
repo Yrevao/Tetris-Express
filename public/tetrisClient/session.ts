@@ -8,7 +8,7 @@ export let id: string | null = 'none';
 export let match: string | null = 'none';
 
 // request a new username to be generated on the server
-export const getNewUsername = (): Promise<any> => {
+export const getNewUsername = (): Promise<string> => {
     return new Promise((resolve, reject) => {
         utils.request({ method: 'username' }, url.origin + '/utils')
             .then(data => {
@@ -43,7 +43,7 @@ export const init = async (socket: any) => {
     }
 
     await getNewUsername()
-        .then((data: any) => {
+        .then((data: string) => {
             username = data;
         });
 
@@ -56,7 +56,7 @@ export const init = async (socket: any) => {
 }
 
 // request a new bag of 7 shuffled pieces from the server
-export const requestBag = (): Promise<any> => {
+export const requestBag = (): Promise<number[]> => {
     return new Promise((resolve, reject) => {
         utils.request({ player: socketSession.id }, url.origin + '/bag')
             .then(data => {

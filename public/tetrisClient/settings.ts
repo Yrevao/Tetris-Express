@@ -299,7 +299,7 @@ const resetSettings = async (apply?: boolean) => {
 
     // set settings that require server side data
     await session.getNewUsername()
-        .then((data: any) => {
+        .then((data: string) => {
             settingMethod('usernameSetting', localSettingList, new Map([['usernameSetting', data]]));
         });
 }
@@ -307,7 +307,7 @@ const resetSettings = async (apply?: boolean) => {
 // when the username button is clicked set the value of the button to the new username retrieved from the server
 const usernameButtonMethod = async () => {
     await session.getNewUsername()
-        .then((name: any) => {
+        .then((name: string) => {
             setUISetting('usernameSetting', name);
         });
 }

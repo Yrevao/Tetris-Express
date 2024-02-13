@@ -7,19 +7,12 @@ import * as settings from './settings.ts';
 // shared objects
 let session: any = null;
 let game: any = null;
-// page separation
-let divs: any = {
-    rootDiv: null,
-    controlsDiv: null,
-    boardsDiv: null,
-}
-// other players
-let opponentState: any = {
-    opponents: {},
-    canvases: {},
-    boards: {},
-    users: {},
-}
+
+// for displaying opponent's boards
+let opponentState: Map<string, HTMLDivElement> = new Map();
+let canvasState: Map<string, HTMLCanvasElement> = new Map();
+let boardState: Map<string, gameUtils.Grid> = new Map();
+let userState: Map<string, string> = new Map();
 
 // remove board when a player leaves
 const leave = (playerId: string) => {
@@ -30,10 +23,10 @@ const leave = (playerId: string) => {
     
     opponent.remove();
 
-    delete opponentState.opponents[playerId];
-    delete opponentState.canvases[playerId];
-    delete opponentState.boards[playerId];
-    delete opponentState.users[playerId];
+    opponentState.delete(playerId);
+    canvasState.delete(playerId);
+    boardState.delete(playerId);
+    userState.delete(playerId);
 }
 
 // method run during each game tick
@@ -47,8 +40,14 @@ const tickMethod = () => {
 
 // when another player joins add a board
 const join = (playerId: string, username: string) => {
+    // null checks
+    let boardsDiv: HTMLElement | null = document.getElementById('boards');
+    if(!boardsDiv)
+        return;
+
+    // create html elements for new opponenet
     let opponentDiv: HTMLDivElement = document.createElement('div');
-    divs.boardsDiv.appendChild(opponentDiv);
+    boardsDiv.appendChild(opponentDiv);
     opponentDiv.id = `opponent-${playerId}`;
 
     let nameplate: HTMLDivElement = document.createElement('div');
@@ -56,34 +55,39 @@ const join = (playerId: string, username: string) => {
     nameplate.textContent = username;
     opponentDiv.appendChild(nameplate);
 
-    opponentState.canvases[playerId] = draw.newPlayfieldCanvas(1000, 2000, '10vh', `board-${playerId}`, opponentDiv);
-    opponentState.users[playerId] = username;
-    opponentState.opponents[playerId] = opponentDiv;
+    canvasState.set(playerId, draw.newPlayfieldCanvas(1000, 2000, '10vh', `board-${playerId}`, opponentDiv));
+    userState.set(playerId, username);
+    opponentState.set(playerId, opponentDiv);
 
     // keep boards in alphabetical order
-    let opponentArr: string[] = Object.keys(opponentState.opponents);
+    let opponentArr: string[] = Array.from(opponentState.keys());
     opponentArr.sort((a, b) => {
         return a.localeCompare(b, "en");
     });
     opponentArr.forEach((id, i) => {
-        opponentState.opponents[id].style.order = i;
+        let curDiv: HTMLDivElement | undefined = opponentState.get(id);
+        if(!curDiv)
+            return;
+
+        curDiv.style.order = i.toString();
+        opponentState.set(id, curDiv);
     })
 }
 
 // update the displayed stats when another player places a piece or changes username
 const update = (playerId: string, board: gameUtils.Grid, username: string) => {
-    opponentState.boards[playerId] = board;
+    boardState.set(playerId, board);
 
     // update username if it's been changed
-    if(username != null && opponentState.users[playerId] != null && opponentState.users[playerId] != username) {
+    if(username != null && userState.get(playerId) != null && userState.get(playerId) != username) {
         let nameplate = document.getElementById(`nameplate-${playerId}`);
         if(nameplate)
             nameplate.textContent = username;
 
-        opponentState.users[playerId] = username;
+        userState.set(playerId, username);
     }
 
-    if(!Object.keys(opponentState.canvases).includes(playerId))
+    if(!Array.from(canvasState.keys()).includes(playerId))
         join(playerId, username);
 }
 
@@ -99,15 +103,25 @@ const pauseMatchButton = () => {
 
 // give player host UI elements (start/end button)
 const setHostUi = () => {
-    // start and pause button
-    utils.newButton('New Game', startMatchButton, 'startbutton', divs.controlsDiv);
-    utils.newButton('Pause', pauseMatchButton, 'pauseButton', divs.controlsDiv);
+    // null checks
+    let controlsDiv: HTMLElement | null = document.getElementById('controls');
+    if(!controlsDiv)
+        return;
+
+    // start and pause buttons
+    utils.newButton('New Game', startMatchButton, 'startbutton', controlsDiv);
+    utils.newButton('Pause', pauseMatchButton, 'pauseButton', controlsDiv);
 }
 
 // place universal ui elements
 const initUI = (players: any) => {
-    divs.boardsDiv.innerHTML = '';
-    divs.controlsDiv.innerHTML = '';
+    // null checks
+    let controlsDiv: HTMLElement | null = document.getElementById('controls');
+    if(!controlsDiv)
+        return;
+
+    // clear UI buttons
+    controlsDiv.innerHTML = '';
 
     // place host ui elements
     if(session.isHost)
@@ -115,7 +129,7 @@ const initUI = (players: any) => {
 
     settings.init(session);
 
-    utils.newButton('Settings', settings.openSettings, 'settingsButton', divs.controlsDiv);
+    utils.newButton('Settings', settings.openSettings, 'settingsButton', controlsDiv);
 
     // place all opponent boards
     for(let playerId in players) {
@@ -219,29 +233,43 @@ export const init = (initSession: any, initGame: any) => {
     setSettingBinds();
 
     // setup gui elements
-    if(divs.boardsDiv && divs.controlsDiv) {
-        divs.boardsDiv.remove();
-        divs.controlsDiv.remove();
+    let boardsDiv: HTMLElement | null = document.getElementById('boards');
+    let controlsDiv: HTMLElement | null = document.getElementById('controls');
+    if(boardsDiv && controlsDiv) {
+        boardsDiv.remove();
+        controlsDiv.remove();
     } 
 
-    divs.rootDiv = document.getElementById('root');
-    let bodyDiv: HTMLBodyElement = document.getElementsByTagName('body')[0];
+    // null checks
+    let rootDiv: HTMLElement | null = document.getElementById('root');
+    if(!rootDiv) {
+        rootDiv = document.createElement('div');
+        rootDiv.id = 'root';
+        document.body.appendChild(rootDiv);
+    }
 
-    divs.boardsDiv = document.createElement('div');
-    divs.boardsDiv.id = 'boards';
+    boardsDiv = document.createElement('div');
+    boardsDiv.id = 'boards';
 
-    divs.controlsDiv = document.createElement('div');
-    divs.controlsDiv.id = 'controls';
+    controlsDiv = document.createElement('div');
+    controlsDiv.id = 'controls';
 
-    bodyDiv.appendChild(divs.boardsDiv);
-    divs.rootDiv.appendChild(divs.controlsDiv);
+    document.body.appendChild(boardsDiv);
+    rootDiv.appendChild(controlsDiv);
 }
 
 export const getViews = (): draw.View[] => {
     let views: draw.View[] = [];
 
-    for(let id in opponentState.boards)
-        views.push(draw.newView(10, 20, 0, 20, opponentState.boards[id], opponentState.canvases[id]));
+    // generate views for opponent boards
+    for(let id of boardState.keys()) {
+        let board: gameUtils.Grid | undefined = boardState.get(id);
+        let canvas: HTMLCanvasElement | undefined = canvasState.get(id);
+        if(!board || !canvas)
+            continue;
+
+        views.push(draw.newView(10, 20, 0, 20, board, canvas));
+    }
 
     return views;
 }

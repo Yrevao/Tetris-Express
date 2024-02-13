@@ -15,7 +15,7 @@ const updateLoop = (ticksPerSecond: number) => {
 }
 
 // begin loop using given tick method
-export const start = (ticksPerSecond: number, initTickMethod: any) => {
+export const start = (ticksPerSecond: number, initTickMethod: Function) => {
     loop = true;
     tickMethod = initTickMethod;
     tickrate = ticksPerSecond;
