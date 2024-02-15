@@ -34,8 +34,9 @@ export const getKickData = (minoId: number, startRot: number, endRot: number): n
 }
 
 export const i = (rot: number): utils.Grid => {
+    let color: utils.Color = idToColor[0];
     let block: utils.Grid = utils.newGrid(4, 4);
-    const blockBox: utils.Box = utils.newBox(false, utils.newColor(0,255,255));
+    const blockBox: utils.Box = utils.newBox(false, color);
     switch(rot) {
         case 0:
                 block[0][1] = blockBox;
@@ -65,8 +66,9 @@ export const i = (rot: number): utils.Grid => {
     return block;
 }
 export const j = (rot: number): utils.Grid => {
+    let color: utils.Color = idToColor[1];
     let block: utils.Grid = utils.newGrid(3, 3);
-    const blockBox: utils.Box = utils.newBox(false, utils.newColor(0,0,255));
+    const blockBox: utils.Box = utils.newBox(false, color);
     block[1][1] = blockBox;
     switch(rot) {
         case 0:
@@ -93,8 +95,9 @@ export const j = (rot: number): utils.Grid => {
     return block;
 }
 export const l = (rot: number): utils.Grid => {
+    let color: utils.Color = idToColor[2];
     let block: utils.Grid = utils.newGrid(3, 3);
-    const blockBox: utils.Box = utils.newBox(false, utils.newColor(255,170,0));
+    const blockBox: utils.Box = utils.newBox(false, color);
     block[1][1] = blockBox;
     switch(rot) {
         case 0:
@@ -121,8 +124,9 @@ export const l = (rot: number): utils.Grid => {
     return block;
 }
 export const o = (rot: number): utils.Grid => {
+    let color: utils.Color = idToColor[3];
     let block: utils.Grid = utils.newGrid(3, 3);
-    const blockBox: utils.Box = utils.newBox(false, utils.newColor(255,255,0));
+    const blockBox: utils.Box = utils.newBox(false, color);
     block[1][0] = blockBox;
     block[2][0] = blockBox;
     block[1][1] = blockBox;
@@ -130,8 +134,9 @@ export const o = (rot: number): utils.Grid => {
     return block;
 }
 export const s = (rot: number): utils.Grid => {
+    let color: utils.Color = idToColor[4];
     let block: utils.Grid = utils.newGrid(3, 3);
-    const blockBox: utils.Box = utils.newBox(false, utils.newColor(0,255,0));
+    const blockBox: utils.Box = utils.newBox(false, color);
     block[1][1] = blockBox;
     switch(rot) {
         case 0:
@@ -158,8 +163,9 @@ export const s = (rot: number): utils.Grid => {
     return block;
 }
 export const t = (rot: number): utils.Grid => {
+    let color: utils.Color = idToColor[5];
     let block: utils.Grid = utils.newGrid(3, 3);
-    const blockBox: utils.Box = utils.newBox(false, utils.newColor(153,0,254));
+    const blockBox: utils.Box = utils.newBox(false, color);
     block[1][1] = blockBox;
     switch(rot) {
         case 0:
@@ -186,8 +192,9 @@ export const t = (rot: number): utils.Grid => {
     return block;
 }
 export const z = (rot: number): utils.Grid => {
+    let color: utils.Color = idToColor[6];
     let block: utils.Grid = utils.newGrid(3, 3);
-    const blockBox: utils.Box = utils.newBox(false, utils.newColor(255,0,0));
+    const blockBox: utils.Box = utils.newBox(false, color);
     block[1][1] = blockBox;
     switch(rot) {
         case 0:
