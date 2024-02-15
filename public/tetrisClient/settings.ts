@@ -316,18 +316,8 @@ const resetButtonMethod = async () => {
     await resetSettings();
 }
 
-// generate settings modal
-const newSettingsModal = () => {
-    let rootDiv: HTMLDivElement | null = (document.getElementById('root') as HTMLDivElement | null);
-    if(!rootDiv)
-        return;
-
-    settingsModal = document.createElement('div');
-    settingsModal.id = 'settingsModal';
-
-    let menuDiv: HTMLDivElement = document.createElement('div');
-    menuDiv.id = 'settingsMenu';
-
+// add menu options to the settings modal
+const addMenuElements = (menuDiv: HTMLElement) => {
     // add menu elements
     menuDiv.innerHTML = `
         <span class="close">&times;</span>
@@ -342,9 +332,6 @@ const newSettingsModal = () => {
         <input class="buttons" type="submit" value="Save">
         </form>
     `;
-
-    settingsModal.appendChild(menuDiv);
-    rootDiv.appendChild(settingsModal);
 
     // form buttons 
     let newUsernameButton: HTMLButtonElement | null = (document.getElementById('newUsernameButton') as HTMLButtonElement | null);
@@ -370,6 +357,24 @@ const newSettingsModal = () => {
     }
 
     setControlsEvents();
+}
+
+// generate settings modal
+const newSettingsModal = () => {
+    let rootDiv: HTMLDivElement | null = (document.getElementById('root') as HTMLDivElement | null);
+    if(!rootDiv)
+        return;
+
+    settingsModal = document.createElement('div');
+    settingsModal.id = 'settingsModal';
+
+    let menuDiv: HTMLDivElement = document.createElement('div');
+    menuDiv.id = 'settingsMenu';
+
+    addMenuElements(menuDiv);
+
+    settingsModal.appendChild(menuDiv);
+    rootDiv.appendChild(settingsModal);
 }
 
 // open settings menu
@@ -447,6 +452,16 @@ export const bindSetting = (setting: string, method: Function, control: boolean)
         controlSettingMethods.set(setting, method);
     else
         settingMethods.set(setting, method);
+}
+
+// refresh settings menu, used for when the user becomes the host and needs full host settings
+export const refreshSettingsUI = () => {
+    let menuDiv: HTMLElement | null = document.getElementById('settingsMenu');
+    if(!menuDiv)
+        return;
+
+    closeSettings();
+    addMenuElements(menuDiv);
 }
 
 // settings elements that depend on server side data

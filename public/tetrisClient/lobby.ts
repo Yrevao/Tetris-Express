@@ -146,6 +146,7 @@ const initUI = (players: any) => {
 const becomeHost = () => {
     session.becomeHost();
     setHostUi();
+    settings.refreshSettingsUI();
 }
 
 // set settings methods
