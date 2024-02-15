@@ -3,7 +3,7 @@ const path = require('path');
 
 module.exports = {
   entry: './public/index_tetrisClient.ts',
-  mode: 'development',
+  mode: 'production',
   output: {
     path: path.resolve(__dirname, 'dist/webpack'),
     filename: 'bundle_tetrisClient.js',
