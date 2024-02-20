@@ -194,10 +194,10 @@ export const events = {
                 break;
         }
     },
-    start: async (data: any) => {
+    start: async (remoteSettings: any) => {
         // start match
         await game.start(
-            settings.applySettings(data)
+            settings.applySettings(remoteSettings)
         );
         loop.start(1000, tickMethod);
     },

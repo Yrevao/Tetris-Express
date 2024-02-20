@@ -223,11 +223,12 @@ const setSettings = () => {
 
 // set events for the controls settings
 const setControlsEvents = () => {
-    for(let setting in controlSettingList) {
-        let control: HTMLInputElement = (document.getElementById(setting) as HTMLInputElement);
+    for(let setting of controlSettingList.keys()) {
+        let control: HTMLInputElement | null = document.getElementById(setting) as HTMLInputElement;
+        if(!control)
+            continue;
 
         control.addEventListener('keyup', (event: KeyboardEvent) => {
-            control.value = event.key;
             setUISetting(setting, event.key);
         });
     }
@@ -334,9 +335,9 @@ const addMenuElements = (menuDiv: HTMLElement) => {
     `;
 
     // form buttons 
-    let newUsernameButton: HTMLButtonElement | null = (document.getElementById('newUsernameButton') as HTMLButtonElement | null);
-    let resetButton: HTMLButtonElement | null = (document.getElementById('resetButton') as HTMLButtonElement | null);
-    let settingsForm: HTMLFormElement | null = (document.getElementById('settingsForm') as HTMLFormElement | null);
+    let newUsernameButton: HTMLButtonElement | null = document.getElementById('newUsernameButton') as HTMLButtonElement | null;
+    let resetButton: HTMLButtonElement | null = document.getElementById('resetButton') as HTMLButtonElement | null;
+    let settingsForm: HTMLFormElement | null = document.getElementById('settingsForm') as HTMLFormElement | null;
 
     if(!newUsernameButton || !resetButton || !settingsForm)
         return;
@@ -346,7 +347,7 @@ const addMenuElements = (menuDiv: HTMLElement) => {
     settingsForm.addEventListener('submit', saveButton);
 
     // close the modal if the close button or if the page around the modal is clicked
-    let closeButton: HTMLSpanElement | null = (document.getElementsByClassName('close')[0] as HTMLSpanElement | null);
+    let closeButton: HTMLSpanElement | null = document.getElementsByClassName('close')[0] as HTMLSpanElement | null;
     if(!closeButton)
         return;
 
@@ -361,20 +362,24 @@ const addMenuElements = (menuDiv: HTMLElement) => {
 
 // generate settings modal
 const newSettingsModal = () => {
-    let rootDiv: HTMLDivElement | null = (document.getElementById('root') as HTMLDivElement | null);
+    // null check
+    let rootDiv: HTMLDivElement | null = document.getElementById('root') as HTMLDivElement | null;
     if(!rootDiv)
         return;
 
+    // create modal HTML elements
     settingsModal = document.createElement('div');
     settingsModal.id = 'settingsModal';
 
     let menuDiv: HTMLDivElement = document.createElement('div');
     menuDiv.id = 'settingsMenu';
 
-    addMenuElements(menuDiv);
-
+    // add modal to DOM
     settingsModal.appendChild(menuDiv);
     rootDiv.appendChild(settingsModal);
+
+    // finish UI
+    addMenuElements(menuDiv);
 }
 
 // open settings menu
@@ -403,7 +408,7 @@ export const exportSettings = (): any => {
 
 // apply settings received from server and return game settings object
 export const applySettings = (remoteSettings: any): any => {
-    // settings to return if there is a null value in the remoteSettings object
+    // return default settings if remoteSettings object is missing properties
     let fallbackSettings: any = {
         levelGravity: 1000 / 5,
         softDropGravity: 1000 / 80,
@@ -411,9 +416,9 @@ export const applySettings = (remoteSettings: any): any => {
     }
 
     // null checks
-    if(!remoteSettings)
+    if(!remoteSettings || !remoteSettings.local || !remoteSettings.global)
         return fallbackSettings;
-    
+
     // generate objects from remote settings
     let remoteLocalSettings: Map<string, SettingValue> = new Map(remoteSettings.local as [string, SettingValue][]);
     globalSettingList = new Map(remoteSettings.global as [string, SettingValue][]);

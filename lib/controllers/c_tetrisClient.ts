@@ -194,9 +194,8 @@ module.exports.startMatch = (req: express.Request, res: express.Response, io: so
         return;
     }
 
-    resetMatch(player.match);
-
     // set match settings
+    resetMatch(player.match);
     let match: Match = s_match.findByKey(player.match);
 
     match.sevenBag = setting_sevenBag as boolean;
