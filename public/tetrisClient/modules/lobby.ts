@@ -3,7 +3,7 @@ import * as utils from './utils.ts';
 import * as draw from './draw.ts';
 import * as loop from './loop.ts';
 import * as input from'./input.ts';
-import * as settings from './settings.ts';
+import * as settings from './settings.tsx';
 // shared objects
 let session: any = null;
 let game: any = null;

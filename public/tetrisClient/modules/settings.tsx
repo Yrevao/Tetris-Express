@@ -1,3 +1,8 @@
+// external modules
+import * as React from 'react';
+import * as ReactDOM from 'react-dom/client';
+import SettingsMenu from '../components/settingsMenu.tsx';
+
 // shared objects
 let session: any = null;
 
@@ -11,6 +16,14 @@ const cookieVersion: string = '1.0.2';
 // types
 type SettingValue = string | number | boolean;          // type for the value of settings when saved to maps
 type CookieValue = string | [string, SettingValue][];   // type used to convert from setting maps to JSON cookie string and back
+type SettingConfig = {
+    setting: string,
+    label: string,
+    type: string,
+    minlength: number,
+    readonly: boolean,
+    onClick: Function | undefined,
+}
 
 // default settings
 const defaultLocalSettings: Map<string, SettingValue> = new Map([   // local settings are set on the client side
@@ -38,6 +51,150 @@ const defaultGlobalSettings: Map<string, SettingValue> = new Map([  // global se
     ['lockDelay', 500],
 ] as [string, SettingValue][]);
 
+// UI configuration
+const localSettingConfig: SettingConfig[] = [   // local settings are set on the client side
+    {
+        setting: 'uernameSetting',
+        label: 'Username:',
+        type: 'text',
+        minlength: 0,
+        readonly: true,
+        onClick: ()=>{},
+    },
+    {
+        setting: 'autorepeatDelay',
+        label: 'Key Autorepeat Delay (ms):',
+        type: 'number',
+        minlength: 1,
+        readonly: false,
+        onClick: ()=>{},
+    },
+    {
+        setting: 'autorepeatSpeed',
+        label: 'Key Autorepeat Speed (ms):',
+        type: 'number',
+        minlength: 1,
+        readonly: false,
+        onClick: ()=>{},
+    }
+];
+
+const controlSettingConfig: SettingConfig[] = [
+    {
+        setting: 'moveLeft',
+        label: 'Move Left:',
+        type: 'text',
+        minlength: 0,
+        readonly: false,
+        onClick: ()=>{},
+    },
+    {
+        setting: 'moveRight',
+        label: 'Move Right:',
+        type: 'text',
+        minlength: 0,
+        readonly: false,
+        onClick: ()=>{},
+    },
+    {
+        setting: 'rotLeft',
+        label: 'Rotate Left:',
+        type: 'text',
+        minlength: 0,
+        readonly: false,
+        onClick: ()=>{},
+    },
+    {
+        setting: 'rotRight',
+        label: 'Rotate Right:',
+        type: 'text',
+        minlength: 0,
+        readonly: false,
+        onClick: ()=>{},
+    },
+    {
+        setting: 'rot180',
+        label: 'Rotate 180:',
+        type: 'text',
+        minlength: 0,
+        readonly: false,
+        onClick: ()=>{},
+    },
+    {
+        setting: 'softDrop',
+        label: 'Soft Drop:',
+        type: 'text',
+        minlength: 0,
+        readonly: false,
+        onClick: ()=>{},
+    },
+    {
+        setting: 'hardDrop',
+        label: 'Hard Drop:',
+        type: 'text',
+        minlength: 0,
+        readonly: false,
+        onClick: ()=>{},
+    },
+    {
+        setting: 'hold',
+        label: 'Hold:',
+        type: 'text',
+        minlength: 0,
+        readonly: false,
+        onClick: ()=>{},
+    }
+];
+
+const globalSettingConfig: SettingConfig[] = [
+    {
+        setting: 'forceSettings',
+        label: 'Enforce Local Settings:',
+        type: 'checkbox',
+        minlength: 0,
+        readonly: false,
+        onClick: ()=>{},
+    },
+    {
+        setting: 'sevenBag',
+        label: '7-Bag RNG:',
+        type: 'checkbox',
+        minlength: 0,
+        readonly: false,
+        onClick: ()=>{},
+    },
+    {
+        setting: 'gravity',
+        label: 'Gravity cells per second:',
+        type: 'number',
+        minlength: 1,
+        readonly: false,
+        onClick: ()=>{},
+    },
+    {
+        setting: 'softDropSpeed',
+        label: 'Soft Drop cells per second',
+        type: 'number',
+        minlength: 1,
+        readonly: false,
+        onClick: ()=>{},
+    },
+    {
+        setting: 'lockDelay',
+        label: 'Lock delay time (ms):',
+        type: 'number',
+        minlength: 1,
+        readonly: false,
+        onClick: ()=>{},
+    }
+];
+
+const settingCategoryConfig: Map<string, SettingConfig[]> = new Map([
+    ['Local Settings', localSettingConfig],
+    ['Controls', controlSettingConfig],
+    ['Global Settings', globalSettingConfig],
+]);
+
 // current settings
 let localSettingList: Map<string, SettingValue> = new Map(defaultLocalSettings);
 let controlSettingList: Map<string, SettingValue> = new Map(defaultControlSettings);
@@ -46,62 +203,6 @@ let globalSettingList: Map<string, SettingValue> = new Map(defaultGlobalSettings
 // settings menu methods
 let settingMethods: Map<string, Function> = new Map();
 let controlSettingMethods: Map<string, Function> = new Map();
-
-// settings ui html
-let localSettingHTML: string = `
-<p class="category">Local Settings</p>
-    <label for="usernameSetting">Username: </label>
-        <input type=text" id="usernameSetting" readonly> <input type="button" id="newUsernameButton" value="New"></input>
-    <br>
-    <label for="autorepeatDelay">Key Autorepeat Delay (ms):</label> 
-        <input type="number" required minlength="1" id="autorepeatDelay"></input>
-    <br>
-    <label for="autorepeatSpeed">Key Autorepeat Speed (ms):</label> 
-        <input type="number" required minlength="1" min="1" id="autorepeatSpeed"></input>
-`;
-let controlSettingHTML: string = `
-<p class="category">Controls</p>
-    <label for="moveLeft">Move Left:</label>
-        <input type="text" id="moveLeft"></input>
-    <br>
-    <label for="moveRight">Move Right:</label>
-        <input type="text" id="moveRight"></input>
-    <br>
-    <label for="rotLeft">Rotate Left:</label>
-        <input type="text" id="rotLeft"></input>
-    <br>
-    <label for="rotRight">Rotate Right:</label>
-        <input type="text" id="rotRight"></input>
-    <br>
-    <label for="rot180">Rotate 180:</label>
-        <input type="text" id="rot180"></input>
-    <br>
-    <label for="softDrop">Soft Drop:</label>
-        <input type="text" id="softDrop"></input>
-    <br>
-    <label for="hardDrop">Hard Drop:</label>
-        <input type="text" id="hardDrop"></input>
-    <br>
-    <label for="hold">Hold:</label>
-        <input type="text" id="hold"></input>
-`
-let globalSettingHTML: string = `
-<p class="category">Global Settings</p>
-    <label for="forceSettings">Enforce Local Settings</label>
-        <input type="checkbox" id="forceSettings">
-    <br>
-    <label for="sevenBag">7-Bag RNG:</label>
-        <input type="checkbox" id="sevenBag">
-    <br>
-    <label for="gravity">Gravity cells per second</label>
-        <input type="number" required minlength="1" id="gravity"></input>
-    <br>
-    <label for="softDropSpeed">Soft Drop cells per second</label>
-        <input type="number" required minlength="1" id="softDropSpeed"></input>
-    <br>
-    <label for="lockDelay">Lock delay time in ms</label>
-        <input type="number" required minlength="1" id="lockDelay"></input>
-`
 
 // get value of a setting in the UI
 const getUISetting = (setting: string): string | boolean => {
@@ -306,7 +407,7 @@ const resetSettings = async (apply?: boolean) => {
 }
 
 // when the username button is clicked set the value of the button to the new username retrieved from the server
-const usernameButtonMethod = async () => {
+var usernameButtonMethod = async () => {
     await session.getNewUsername()
         .then((name: string) => {
             setUISetting('usernameSetting', name);
@@ -320,38 +421,24 @@ const resetButtonMethod = async () => {
 // add menu options to the settings modal
 const addMenuElements = (menuDiv: HTMLElement) => {
     // add menu elements
-    menuDiv.innerHTML = `
-        <span class="close">&times;</span>
-        <form id="settingsForm">
-            ${localSettingHTML}
-        <br>
-            ${controlSettingHTML}
-        <br>
-            ${session.isHost ? globalSettingHTML : '<i>You must be host to change global settings</i>'}
-        <br>
-        <input class="buttons" id="resetButton" type="button" value="Reset Defaults">
-        <input class="buttons" type="submit" value="Save">
-        </form>
-    `;
+    const reactRoot = ReactDOM.createRoot(menuDiv);
+    reactRoot.render(
+        <SettingsMenu 
+            categoryMap={settingCategoryConfig} 
+            onSubmit={saveButton} 
+            onReset={resetButtonMethod} 
+            onClose={closeSettings} 
+        />
+    );
 
-    // form buttons 
-    let newUsernameButton: HTMLButtonElement | null = document.getElementById('newUsernameButton') as HTMLButtonElement | null;
-    let resetButton: HTMLButtonElement | null = document.getElementById('resetButton') as HTMLButtonElement | null;
-    let settingsForm: HTMLFormElement | null = document.getElementById('settingsForm') as HTMLFormElement | null;
+    // form buttons
+    let newUsernameButton: HTMLButtonElement | null = document.getElementById('newusernameButton') as HTMLButtonElement | null;
 
-    if(!newUsernameButton || !resetButton || !settingsForm)
+    if(!newUsernameButton)
         return;
 
     newUsernameButton.onclick = usernameButtonMethod;
-    resetButton.onclick = resetButtonMethod;
-    settingsForm.addEventListener('submit', saveButton);
 
-    // close the modal if the close button or if the page around the modal is clicked
-    let closeButton: HTMLSpanElement | null = document.getElementsByClassName('close')[0] as HTMLSpanElement | null;
-    if(!closeButton)
-        return;
-
-    closeButton.onclick = closeSettings;
     window.onclick = (event: Event) => {
         if(event.target == settingsModal)
             closeSettings();
