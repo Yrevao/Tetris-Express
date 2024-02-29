@@ -36,7 +36,9 @@ function SettingCategory({ title, settingList }) {
 }
 
 // settings form; categoryMap: map of default settings, readonlyMethods: methods for read only settings' buttons, onReset: method called when reset settings button is clicked, onSave: method called when save button is clicked
-export default function SettingsMenu({ categoryMap, onSubmit, onReset, onClose }) {
+export default function SettingsMenu({ categoryMap, onLoad, onSubmit, onReset, onClose }) {
+    React.useEffect(onLoad);
+
     let categories: any = [];
     for(let [category, settings] of categoryMap) {
         categories.push(

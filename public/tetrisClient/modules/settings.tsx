@@ -27,7 +27,7 @@ type SettingConfig = {
 
 // default settings
 const defaultLocalSettings: Map<string, SettingValue> = new Map([   // local settings are set on the client side
-    ['uernameSetting', 'none'],
+    ['usernameSetting', 'none'],
     ['autorepeatDelay', 167],
     ['autorepeatSpeed', 33],
 ] as [string, SettingValue][]);
@@ -54,12 +54,17 @@ const defaultGlobalSettings: Map<string, SettingValue> = new Map([  // global se
 // UI configuration
 const localSettingConfig: SettingConfig[] = [   // local settings are set on the client side
     {
-        setting: 'uernameSetting',
+        setting: 'usernameSetting',
         label: 'Username:',
         type: 'text',
         minlength: 0,
         readonly: true,
-        onClick: ()=>{},
+        onClick: async () => {
+            await session.getNewUsername()
+            .then((name: string) => {
+                setUISetting('usernameSetting', name);
+            });
+        },
     },
     {
         setting: 'autorepeatDelay',
@@ -322,19 +327,6 @@ const setSettings = () => {
     runSettings(controlSettingList, controlSettingMethods);
 }
 
-// set events for the controls settings
-const setControlsEvents = () => {
-    for(let setting of controlSettingList.keys()) {
-        let control: HTMLInputElement | null = document.getElementById(setting) as HTMLInputElement;
-        if(!control)
-            continue;
-
-        control.addEventListener('keyup', (event: KeyboardEvent) => {
-            setUISetting(setting, event.key);
-        });
-    }
-}
-
 // set cookie
 const setCookieSettings = () => {
     let cookieSettings: Map<string, CookieValue> = new Map([
@@ -406,16 +398,22 @@ const resetSettings = async (apply?: boolean) => {
         });
 }
 
-// when the username button is clicked set the value of the button to the new username retrieved from the server
-var usernameButtonMethod = async () => {
-    await session.getNewUsername()
-        .then((name: string) => {
-            setUISetting('usernameSetting', name);
-        });
-}
-
+// reset settings in UI without applying anything when the reset settings button is clicked
 const resetButtonMethod = async () => {
     await resetSettings();
+}
+
+// control settings will respond to keystrokes
+const setControlsEvents = () => {
+    for(let setting of controlSettingList.keys()) {
+        let control: HTMLInputElement | null = document.getElementById(setting) as HTMLInputElement;
+        if(!control)
+            continue;
+
+        control.addEventListener('keyup', (event: KeyboardEvent) => {
+            setUISetting(setting, event.key);
+        });
+    }
 }
 
 // add menu options to the settings modal
@@ -424,27 +422,19 @@ const addMenuElements = (menuDiv: HTMLElement) => {
     const reactRoot = ReactDOM.createRoot(menuDiv);
     reactRoot.render(
         <SettingsMenu 
-            categoryMap={settingCategoryConfig} 
-            onSubmit={saveButton} 
-            onReset={resetButtonMethod} 
-            onClose={closeSettings} 
+            categoryMap={settingCategoryConfig}
+            onLoad={setControlsEvents}
+            onSubmit={saveButton}
+            onReset={resetButtonMethod}
+            onClose={closeSettings}
         />
     );
 
-    // form buttons
-    let newUsernameButton: HTMLButtonElement | null = document.getElementById('newusernameButton') as HTMLButtonElement | null;
-
-    if(!newUsernameButton)
-        return;
-
-    newUsernameButton.onclick = usernameButtonMethod;
-
+    // click off the modal to close the settings menu
     window.onclick = (event: Event) => {
         if(event.target == settingsModal)
             closeSettings();
     }
-
-    setControlsEvents();
 }
 
 // generate settings modal
