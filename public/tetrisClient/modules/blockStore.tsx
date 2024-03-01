@@ -1,5 +1,5 @@
 // used to store grids for i, j, l, o, s, t, z blocks with 4 rotations hardcoded, also provides id to color/letter arrays
-import * as utils from './gameUtils.ts';
+import * as utils from './gameUtils.tsx';
 
 // super rotation system (SRS) wall kick tables
 const kickMatrix: Map<string, number[][]> = new Map([

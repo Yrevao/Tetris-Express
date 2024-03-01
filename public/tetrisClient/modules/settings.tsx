@@ -1,7 +1,7 @@
 // external modules
 import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
-import SettingsMenu from '../components/settingsMenu.tsx';
+import * as SettingsMenu from '../components/settingsMenu.tsx';
 
 // shared objects
 let session: any = null;
@@ -16,14 +16,6 @@ const cookieVersion: string = '1.0.2';
 // types
 type SettingValue = string | number | boolean;          // type for the value of settings when saved to maps
 type CookieValue = string | [string, SettingValue][];   // type used to convert from setting maps to JSON cookie string and back
-type SettingConfig = {
-    setting: string,
-    label: string,
-    type: string,
-    minlength: number,
-    readonly: boolean,
-    onClick: Function | undefined,
-}
 
 // default settings
 const defaultLocalSettings: Map<string, SettingValue> = new Map([   // local settings are set on the client side
@@ -52,7 +44,7 @@ const defaultGlobalSettings: Map<string, SettingValue> = new Map([  // global se
 ] as [string, SettingValue][]);
 
 // UI configuration
-const localSettingConfig: SettingConfig[] = [   // local settings are set on the client side
+const localSettingConfig: SettingsMenu.SettingConfig[] = [   // local settings are set on the client side
     {
         setting: 'usernameSetting',
         label: 'Username:',
@@ -84,7 +76,7 @@ const localSettingConfig: SettingConfig[] = [   // local settings are set on the
     }
 ];
 
-const controlSettingConfig: SettingConfig[] = [
+const controlSettingConfig: SettingsMenu.SettingConfig[] = [
     {
         setting: 'moveLeft',
         label: 'Move Left:',
@@ -151,7 +143,7 @@ const controlSettingConfig: SettingConfig[] = [
     }
 ];
 
-const globalSettingConfig: SettingConfig[] = [
+const globalSettingConfig: SettingsMenu.SettingConfig[] = [
     {
         setting: 'forceSettings',
         label: 'Enforce Local Settings:',
@@ -194,7 +186,7 @@ const globalSettingConfig: SettingConfig[] = [
     }
 ];
 
-const settingCategoryConfig: Map<string, SettingConfig[]> = new Map([
+const settingCategoryConfig: Map<string, SettingsMenu.SettingConfig[]> = new Map([
     ['Local Settings', localSettingConfig],
     ['Controls', controlSettingConfig],
     ['Global Settings', globalSettingConfig],
@@ -419,9 +411,9 @@ const setControlsEvents = () => {
 // add menu options to the settings modal
 const addMenuElements = (menuDiv: HTMLElement) => {
     // add menu elements
-    const reactRoot = ReactDOM.createRoot(menuDiv);
+    let reactRoot = ReactDOM.createRoot(menuDiv);
     reactRoot.render(
-        <SettingsMenu 
+        <SettingsMenu.Menu 
             categoryMap={settingCategoryConfig}
             onLoad={setControlsEvents}
             onSubmit={saveButton}

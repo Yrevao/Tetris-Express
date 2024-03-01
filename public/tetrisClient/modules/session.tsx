@@ -1,5 +1,5 @@
-import * as utils from "./utils.ts";
-import * as gameUtils from "./gameUtils.ts";
+import * as utils from "./utils.tsx";
+import * as gameUtils from "./gameUtils.tsx";
 const url: URL = new URL(window.location.href);
 let socketSession: any = null;
 export let username: string | null = 'none';

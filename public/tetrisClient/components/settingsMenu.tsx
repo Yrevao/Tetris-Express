@@ -1,34 +1,38 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
-// a setting in the settings form
-function SettingField({ setting, label, type, minlength, readonly, onClick }) {
+export type SettingConfig = {
+    setting: string,
+    label: string,
+    type: string,
+    minlength: number,
+    readonly: boolean,
+    onClick: Function,
+}
+
+// a setting field in the settings form
+function SettingField({ config }: { config: SettingConfig }) {
     return (
         <>
-            <label for={setting}>{label}</label>
-            <input id={setting} type={type} minlength={minlength} readonly={readonly} />
-            {readonly ? (<input type="button" id={`new${setting}`} value="New" onClick={onClick}></input>) : ''}
+            <label htmlFor={config.setting}>{config.label}</label>
+            <input id={config.setting} type={config.type} minLength={config.minlength} readOnly={config.readonly} />
+            {config.readonly ? (<input type="button" id={`new${config.setting}`} value="New" onClick={() => config.onClick()}></input>) : ''}
             <br />
         </>
     );
 }
 
 // collection of setting fields
-function SettingCategory({ title, settingList }) {
+function SettingCategory({ title, settingList }: { title: string, settingList: SettingConfig[] }) {
     let settings: any = settingList.map(config => 
         <SettingField
-            setting={config.setting}
-            label={config.label}
-            type={config.type}
-            minlength={config.minlength}
-            readonly={config.readonly}
-            onClick={config.onClick}
+            config={config}
         />
     );
 
     return(
         <>
-            <p class="category">{title}</p>
+            <p className="category">{title}</p>
                 {settings}
             <br />
         </>
@@ -36,8 +40,9 @@ function SettingCategory({ title, settingList }) {
 }
 
 // settings form; categoryMap: map of default settings, readonlyMethods: methods for read only settings' buttons, onReset: method called when reset settings button is clicked, onSave: method called when save button is clicked
-export default function SettingsMenu({ categoryMap, onLoad, onSubmit, onReset, onClose }) {
-    React.useEffect(onLoad);
+export function Menu({ categoryMap, onLoad, onSubmit, onReset, onClose }: { categoryMap: Map<string, SettingConfig[]>, onLoad: Function, onSubmit: Function, onReset: Function, onClose: Function }) {
+    // after components are added to DOM run this method
+    React.useEffect(() => onLoad());
 
     let categories: any = [];
     for(let [category, settings] of categoryMap) {
@@ -51,13 +56,13 @@ export default function SettingsMenu({ categoryMap, onLoad, onSubmit, onReset, o
 
     return (
         <>
-            <span class="close" onClick={onClose}>&times;</span>
-            <form id="settingsForm" onSubmit={onSubmit}>
+            <span className="close" onClick={() =>  onClose()}>&times;</span>
+            <form id="settingsForm" onSubmit={() => onSubmit()}>
 
             {categories}
 
-            <input class="buttons" id="resetButton" type="button" value="Reset Defaults" onClick={onReset} />
-            <input class="buttons" type="submit" value="Save" />
+            <input className="buttons" id="resetButton" type="button" value="Reset Defaults" onClick={() => onReset()} />
+            <input className="buttons" type="submit" value="Save" />
             </form>
         </>
     );

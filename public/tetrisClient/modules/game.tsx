@@ -1,7 +1,10 @@
-import * as gameUtils from './gameUtils.ts';
-import * as blockStore from './blockStore.ts';
-import * as draw from './draw.ts';
-import * as input from './input.ts'
+import * as React from 'react';
+import * as ReactDOM from 'react-dom/client';
+import * as gameMenu from '../components/gameMenu.tsx';
+import * as gameUtils from './gameUtils.tsx';
+import * as blockStore from './blockStore.tsx';
+import * as draw from './draw.tsx';
+import * as input from './input.tsx'
 // shared objects
 let session: any = null;
 // canvas config and data
@@ -32,6 +35,13 @@ let scores: {
     ppsScore: null,
     timeScore: null,
 }
+let scoreFields: Map<string, string> = new Map([
+    ['usernameScore', ''],
+    ['locks', '# '],
+    ['lines', 'Lines '],
+    ['pps', 'PPS '],
+    ['time', 'Time '],
+])
 // gameplay settings
 let settings: {
     levelGravity: number,                   // fall speed of current level
@@ -381,6 +391,20 @@ export const events = {
     }
 }
 
+// init score objects
+const initScoreboard = () => {
+    scores.usernameScore = document.getElementById('usernameScore');
+    scores.locksScore = document.getElementById('locks');
+    scores.linesScore = document.getElementById('lines');
+    scores.ppsScore = document.getElementById('pps');
+    scores.timeScore = document.getElementById('time');
+
+    setScore(scores.locksScore, state.locks)
+    setScore(scores.linesScore, state.lines);
+    setScore(scores.ppsScore, state.pps);
+    setScore(scores.timeScore, formatPlayTime(0, Date.now()));
+}
+
 // init objects
 export const init = (initSession: any) => {
     session = initSession;
@@ -399,26 +423,16 @@ export const init = (initSession: any) => {
     view.nextCanvas = draw.newPlayfieldCanvas(400, 1400, '28vh', 'nextCanvas', gameBoardsDiv);
 
     // setup score display
-    const scoreBoard = document.createElement('div');
+    let scoreBoard = document.createElement('div');
     scoreBoard.id = 'scoreboard';
-    scoreBoard.innerHTML = `
-        <span id="usernameScore">none</span>
-        <br>
-        <span># </span><span id="locks">${state.locks}</span>
-        <br>
-        <span>Lines </span><span id="lines">${state.lines}</span>
-        <br>
-        <span>PPS </span><span id="pps">${state.pps}</span>
-        <br>
-        <span>Time </span><span id="time">${formatPlayTime(0, Date.now())}</span>
-    `
     root.appendChild(scoreBoard);
-
-    scores.usernameScore = document.getElementById('usernameScore');
-    scores.locksScore = document.getElementById('locks');
-    scores.linesScore = document.getElementById('lines');
-    scores.ppsScore = document.getElementById('pps');
-    scores.timeScore = document.getElementById('time');
+    let reactRoot = ReactDOM.createRoot(scoreBoard);
+    reactRoot.render(
+        <gameMenu.ScoreBoard
+            fieldMap={scoreFields}
+            onLoad={initScoreboard}
+        />
+    );
 }
 
 // prepare game for tick cycle

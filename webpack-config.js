@@ -2,7 +2,7 @@ const webpack = require('webpack');
 const path = require('path');
 
 module.exports = {
-  entry: './public/index_tetrisClient.ts',
+  entry: './public/index_tetrisClient.tsx',
   mode: 'production',
   output: {
     path: path.resolve(__dirname, 'dist/webpack'),

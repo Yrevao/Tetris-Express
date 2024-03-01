@@ -1,4 +1,6 @@
-import * as utils from './gameUtils.ts';
+import * as React from 'react';
+import * as ReactDOM from 'react-dom/client';
+import * as utils from './gameUtils.tsx';
 
 // view type
 export type View = {
@@ -18,7 +20,7 @@ export const newView = (viewW: number, viewH: number, x: number, y: number, grid
         startX: x,
         startY: y,
         board: grid,
-        canvas: targetCanvas
+        canvas: targetCanvas,
     }
 }
 
