@@ -1,6 +1,6 @@
 import * as gameUtils from './gameUtils.tsx';
 import * as utils from './utils.tsx';
-import * as draw from './draw.tsx';
+import * as draw from './drawUtils.tsx';
 import * as loop from './loop.tsx';
 import * as input from'./input.tsx';
 import * as settings from './settings.tsx';

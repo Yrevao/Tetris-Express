@@ -3,7 +3,7 @@ import * as ReactDOM from 'react-dom/client';
 import * as gameMenu from '../components/gameMenu.tsx';
 import * as gameUtils from './gameUtils.tsx';
 import * as blockStore from './blockStore.tsx';
-import * as draw from './draw.tsx';
+import * as draw from './drawUtils.tsx';
 import * as input from './input.tsx'
 // shared objects
 let session: any = null;
@@ -426,6 +426,7 @@ export const init = (initSession: any) => {
     let scoreBoard = document.createElement('div');
     scoreBoard.id = 'scoreboard';
     root.appendChild(scoreBoard);
+    // pass scoreboard div to react
     let reactRoot = ReactDOM.createRoot(scoreBoard);
     reactRoot.render(
         <gameMenu.ScoreBoard
