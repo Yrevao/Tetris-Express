@@ -34,7 +34,7 @@ const tickMethod = () => {
     input.checkKeys();
     game.tick();
 
-    const views: draw.View[] = game.getViews().concat(getViews());
+    const views: draw.View[] = getViews();
     draw.updateViews(views);
 }
 

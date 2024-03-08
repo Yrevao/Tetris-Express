@@ -20,7 +20,6 @@ export const GameBoards = ({ holdGrid, gameGrid, nextGrid }: { holdGrid: gameUti
     const gameView: drawUtils.View = drawUtils.newView(10, 20, 0, 20, gameGrid);
     const nextView: drawUtils.View = drawUtils.newView(4, 14, 0, 0, nextGrid);
 
-
     return(
         <>
             <draw.GridCanvas view={holdView} width={400} height={200} scale={'4vh'} id={'holdCanvas'} />

@@ -8,17 +8,19 @@ export type View = {
     viewportH: number,
     startX: number,
     startY: number,
-    grid: utils.Grid
+    grid: utils.Grid,
+    canvas?: HTMLCanvasElement,
 }
 
 // view objects
-export const newView = (viewW: number, viewH: number, x: number, y: number, grid: utils.Grid): View => {
+export const newView = (viewW: number, viewH: number, x: number, y: number, grid: utils.Grid, targetCanvas?: HTMLCanvasElement): View => {
     return {
         viewportW: viewW,
         viewportH: viewH,
         startX: x,
         startY: y,
-        grid: grid
+        grid: grid,
+        canvas: targetCanvas,
     }
 }
 
@@ -73,4 +75,15 @@ export const cls = (playfieldCanvas: HTMLCanvasElement) => {
         return;
 
     ctx.clearRect(0, 0, playfieldCanvas.width, playfieldCanvas.height);
+}
+
+// update the contents of all the canvases with data from the passed array
+export const updateViews = (views: View[]) => {
+    views.forEach((aView: View) => {
+        if(!aView.canvas)
+            return;
+
+        cls(aView.canvas);
+        drawGrid(aView, aView.canvas);
+    });
 }

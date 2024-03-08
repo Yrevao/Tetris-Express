@@ -5,21 +5,16 @@ import * as gameUtils from './gameUtils.tsx';
 import * as blockStore from './blockStore.tsx';
 import * as draw from './drawUtils.tsx';
 import * as input from './input.tsx'
+
 // shared objects
 let session: any = null;
-// canvas config and data
+// canvas config
 let view: {
     boardW: number,                         // width of game board grid
     boardH: number,                         // height of game board grid
-    boardCanvas: HTMLCanvasElement | null,  // DOM element of the game board display canvas
-    holdCanvas: HTMLCanvasElement | null,   // DOM element for the hold display canvas
-    nextCanvas: HTMLCanvasElement | null,   // DOM element for the next piece display canvas
 } = {
     boardW: 10,
     boardH: 40,
-    boardCanvas: null,
-    holdCanvas: null,
-    nextCanvas: null,
 }
 // scoreboard data
 let scores: {
@@ -405,6 +400,28 @@ const initScoreboard = () => {
     setScore(scores.timeScore, formatPlayTime(0, Date.now()));
 }
 
+// pass boards to react componenet for render
+const runRender = () => {
+    // create react root
+    let gameDiv: HTMLElement | null = document.getElementById('game');
+    if(!gameDiv)
+        return;
+    let reactRoot = ReactDOM.createRoot(gameDiv);
+
+    // generate hold grid based on if a piece is being held
+    let holdGrid: gameUtils.Grid = gameUtils.newGrid(4, 2);
+    if(state.hold != null)
+        holdGrid = gameUtils.stamp(0, 0, holdGrid, blockStore.idToLetter[state.hold](0));
+    // generate next grid
+    let nextGrid: gameUtils.Grid = gameUtils.newGrid(4, 14);
+    for(let i = 0; i < 5 && state.bag.length > 0; i++)
+        gameUtils.stamp(0, i*3, nextGrid, blockStore.idToLetter[state.bag[1+i]](0));
+
+    reactRoot.render(
+        <gameMenu.GameBoards holdGrid={holdGrid} gameGrid={state.board} nextGrid={nextGrid} />
+    );
+}
+
 // init objects
 export const init = (initSession: any) => {
     session = initSession;
@@ -413,14 +430,11 @@ export const init = (initSession: any) => {
     if(!root)
         return;
 
-    // setup canvases
+    // setup canvases div
     let gameBoardsDiv = document.createElement('div');
     gameBoardsDiv.id = 'game';
     root.appendChild(gameBoardsDiv);
-
-    view.holdCanvas = draw.newPlayfieldCanvas(400, 200, '4vh', 'holdCanvas', gameBoardsDiv);
-    view.boardCanvas = draw.newPlayfieldCanvas(1000, 2000, '40vh', 'boardCanvas', gameBoardsDiv);
-    view.nextCanvas = draw.newPlayfieldCanvas(400, 1400, '28vh', 'nextCanvas', gameBoardsDiv);
+    runRender();
 
     // setup score display
     let scoreBoard = document.createElement('div');
@@ -468,29 +482,8 @@ export const tick = () => {
         placeGhost();
         setScore(scores.timeScore, formatPlayTime());
     }
-}
 
-// return canvas and state info for updating graphics
-export const getViews = (): draw.View[] => {
-    // check that canvases are defined
-    if(!view.boardCanvas || !view.holdCanvas || !view.nextCanvas)
-        return [];
-
-    // generate hold grid based on if a piece is being held
-    let holdGrid: gameUtils.Grid = gameUtils.newGrid(4, 2);
-    if(state.hold != null)
-        holdGrid = gameUtils.stamp(0, 0, holdGrid, blockStore.idToLetter[state.hold](0));
-    // generate next grid
-    let nextGrid: gameUtils.Grid = gameUtils.newGrid(4, 14);
-    for(let i = 0; i < 5; i++)
-        gameUtils.stamp(0, i*3, nextGrid, blockStore.idToLetter[state.bag[1+i]](0));
-
-    // define views
-    const gameView: draw.View = draw.newView(10, 20, 0, 20, state.board, view.boardCanvas);
-    const holdView: draw.View = draw.newView(4, 2, 0, 0, holdGrid, view.holdCanvas);
-    const nextView: draw.View = draw.newView(4, 14, 0, 0, nextGrid, view.nextCanvas);
-
-    return [gameView, holdView, nextView];
+    runRender();
 }
 
 // change the username stored in the game state
