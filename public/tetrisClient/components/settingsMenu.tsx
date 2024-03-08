@@ -16,7 +16,12 @@ const SettingField = ({ config }: { config: SettingConfig }) => {
         <>
             <label htmlFor={config.setting}>{config.label}</label>
             <input id={config.setting} type={config.type} minLength={config.minlength} readOnly={config.readonly} />
-            {config.readonly ? (<input type="button" id={`new${config.setting}`} value="New" onClick={() => config.onClick()}></input>) : ''}
+            {
+                config.readonly ? 
+                    (<input type="button" id={`new${config.setting}`} value="New" onClick={() => config.onClick()}></input>) 
+                        : 
+                    ''
+            }
             <br />
         </>
     );

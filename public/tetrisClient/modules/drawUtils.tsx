@@ -76,14 +76,3 @@ export const cls = (playfieldCanvas: HTMLCanvasElement) => {
 
     ctx.clearRect(0, 0, playfieldCanvas.width, playfieldCanvas.height);
 }
-
-// update the contents of all the canvases with data from the passed array
-export const updateViews = (views: View[]) => {
-    views.forEach((aView: View) => {
-        if(!aView.canvas)
-            return;
-
-        cls(aView.canvas);
-        drawGrid(aView, aView.canvas);
-    });
-}

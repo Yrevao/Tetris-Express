@@ -1,3 +1,6 @@
+import * as React from 'react';
+import * as ReactDOM from 'react-dom/client';
+import * as lobbyMenu from '../components/lobbyMenu.tsx';
 import * as gameUtils from './gameUtils.tsx';
 import * as utils from './utils.tsx';
 import * as draw from './drawUtils.tsx';
@@ -9,86 +12,47 @@ let session: any = null;
 let game: any = null;
 
 // for displaying opponent's boards
-let opponentState: Map<string, HTMLDivElement> = new Map();
-let canvasState: Map<string, HTMLCanvasElement> = new Map();
 let boardState: Map<string, gameUtils.Grid> = new Map();
 let userState: Map<string, string> = new Map();
 
+// render all opponenet boards via react
+const runRender = () => {
+    let boardsDiv: HTMLElement | null = document.getElementById('boards');
+    if(!boardsDiv)
+        return;
+    let reactRoot = ReactDOM.createRoot(boardsDiv);
+
+    reactRoot.render(
+        <lobbyMenu.OpponentBoards
+            boardMap={boardState}
+            userMap={userState}
+        />
+    );
+}
+
 // remove board when a player leaves
 const leave = (playerId: string) => {
-    let opponent: HTMLElement | null = document.getElementById(`opponent-${playerId}`);
-    
-    if(!opponent)
-        return;
-    
-    opponent.remove();
-
-    opponentState.delete(playerId);
-    canvasState.delete(playerId);
     boardState.delete(playerId);
     userState.delete(playerId);
+
+    runRender();
 }
 
 // method run during each game tick
 const tickMethod = () => {
     input.checkKeys();
     game.tick();
-
-    const views: draw.View[] = getViews();
-    draw.updateViews(views);
-}
-
-// when another player joins add a board
-const join = (playerId: string, username: string) => {
-    // null checks
-    let boardsDiv: HTMLElement | null = document.getElementById('boards');
-    if(!boardsDiv)
-        return;
-
-    // create html elements for new opponenet
-    let opponentDiv: HTMLDivElement = document.createElement('div');
-    boardsDiv.appendChild(opponentDiv);
-    opponentDiv.id = `opponent-${playerId}`;
-
-    let nameplate: HTMLDivElement = document.createElement('div');
-    nameplate.id = `nameplate-${playerId}`;
-    nameplate.textContent = username;
-    opponentDiv.appendChild(nameplate);
-
-    canvasState.set(playerId, draw.newPlayfieldCanvas(1000, 2000, '10vh', `board-${playerId}`, opponentDiv));
-    userState.set(playerId, username);
-    opponentState.set(playerId, opponentDiv);
-
-    // keep boards in alphabetical order
-    let opponentArr: string[] = Array.from(opponentState.keys());
-    opponentArr.sort((a, b) => {
-        return a.localeCompare(b, "en");
-    });
-    opponentArr.forEach((id, i) => {
-        let curDiv: HTMLDivElement | undefined = opponentState.get(id);
-        if(!curDiv)
-            return;
-
-        curDiv.style.order = i.toString();
-        opponentState.set(id, curDiv);
-    })
 }
 
 // update the displayed stats when another player places a piece or changes username
 const update = (playerId: string, board: gameUtils.Grid, username: string) => {
     boardState.set(playerId, board);
 
-    // update username if it's been changed
-    if(username != null && userState.get(playerId) != null && userState.get(playerId) != username) {
-        let nameplate = document.getElementById(`nameplate-${playerId}`);
-        if(nameplate)
-            nameplate.textContent = username;
-
+    // update username if it's been changed or dosen't exist
+    if(username != null && userState.get(playerId) != username)
         userState.set(playerId, username);
-    }
 
-    if(!Array.from(canvasState.keys()).includes(playerId))
-        join(playerId, username);
+    runRender();
 }
 
 // start the match
@@ -184,7 +148,7 @@ export const events = {
                 update(data.player, data.board, data.username);
                 break;
             case 'join':
-                join(data.player, data.username);
+                update(data.player, data.board, data.username);
                 break;
             case 'leave':
                 leave(data.player);
@@ -257,20 +221,4 @@ export const init = (initSession: any, initGame: any) => {
 
     document.body.appendChild(boardsDiv);
     rootDiv.appendChild(controlsDiv);
-}
-
-export const getViews = (): draw.View[] => {
-    let views: draw.View[] = [];
-
-    // generate views for opponent boards
-    for(let id of boardState.keys()) {
-        let board: gameUtils.Grid | undefined = boardState.get(id);
-        let canvas: HTMLCanvasElement | undefined = canvasState.get(id);
-        if(!board || !canvas)
-            continue;
-
-        views.push(draw.newView(10, 20, 0, 20, board, canvas));
-    }
-
-    return views;
 }

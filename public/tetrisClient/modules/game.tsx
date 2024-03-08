@@ -418,7 +418,11 @@ const runRender = () => {
         gameUtils.stamp(0, i*3, nextGrid, blockStore.idToLetter[state.bag[1+i]](0));
 
     reactRoot.render(
-        <gameMenu.GameBoards holdGrid={holdGrid} gameGrid={state.board} nextGrid={nextGrid} />
+        <gameMenu.GameBoards
+            holdGrid={holdGrid}
+            gameGrid={state.board}
+            nextGrid={nextGrid}
+        />
     );
 }
 

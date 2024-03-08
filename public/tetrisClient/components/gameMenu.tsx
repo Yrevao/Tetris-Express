@@ -22,9 +22,27 @@ export const GameBoards = ({ holdGrid, gameGrid, nextGrid }: { holdGrid: gameUti
 
     return(
         <>
-            <draw.GridCanvas view={holdView} width={400} height={200} scale={'4vh'} id={'holdCanvas'} />
-            <draw.GridCanvas view={gameView} width={1000} height={2000} scale={'40vh'} id={'boardCanvas'} />
-            <draw.GridCanvas view={nextView} width={400} height={1400} scale={'28vh'} id={'nextCanvas'} />
+            <draw.GridCanvas
+                view={holdView}
+                width={400}
+                height={200}
+                scale={'4vh'}
+                id={'holdCanvas'}
+            />
+            <draw.GridCanvas
+                view={gameView}
+                width={1000}
+                height={2000}
+                scale={'40vh'}
+                id={'boardCanvas'}
+            />
+            <draw.GridCanvas
+                view={nextView}
+                width={400}
+                height={1400}
+                scale={'28vh'}
+                id={'nextCanvas'}
+            />
         </>
     );
 }

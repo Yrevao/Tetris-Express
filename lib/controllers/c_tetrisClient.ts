@@ -245,7 +245,7 @@ module.exports.joinSocket = (socket: socketIO.Socket, io: socketIO.Server) => {
     }
 
     io.to(socket.id).emit('update', {flag: 'init', players: structuredClone(players)});
-    io.to(matchId).emit('update', {flag: 'join', player: socket.id, username: player.username});
+    io.to(matchId).emit('update', {flag: 'join', player: socket.id, username: player.username, board: player.board});
 }
 
 module.exports.leave = (socket: socketIO.Socket, io: socketIO.Server) => {
