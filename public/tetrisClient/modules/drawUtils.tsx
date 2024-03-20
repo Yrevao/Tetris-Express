@@ -69,7 +69,10 @@ export const drawGrid = (view: View, canvas?: HTMLCanvasElement | null) => {
 }
 
 // clear the visible screen
-export const cls = (playfieldCanvas: HTMLCanvasElement) => {
+export const cls = (playfieldCanvas: HTMLCanvasElement | null) => {
+    if(!playfieldCanvas)
+        return;
+
     let ctx = playfieldCanvas.getContext("2d");
     if(!ctx)
         return;

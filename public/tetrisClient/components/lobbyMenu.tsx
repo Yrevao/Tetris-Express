@@ -12,14 +12,14 @@ const Board = ({ id, order, name, grid }: { id: string, order: string, name: str
         <div id={`opponent-${id}`} style={{order: order}}>
             <div id={`nameplate-${id}`}>
                 {name}
-                <draw.GridCanvas
-                    view={gridView}
-                    width={1000}
-                    height={2000}
-                    scale='10vh'
-                    id={id}
-                />
             </div>
+            <draw.GridCanvas
+                view={gridView}
+                width={1000}
+                height={2000}
+                scale='10vh'
+                id={id}
+            />
         </div>
     );
 }

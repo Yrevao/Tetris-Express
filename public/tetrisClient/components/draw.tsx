@@ -6,7 +6,10 @@ import * as drawUtils from '../modules/drawUtils.tsx';
 export const GridCanvas = ({ view, width, height, scale, id }: { view: drawUtils.View, width: number, height: number, scale: string, id: string }) => {
     const canvas = React.useRef(null);
 
-    React.useEffect(() => drawUtils.drawGrid(view, canvas.current));
+    React.useEffect(() => {
+        drawUtils.cls(canvas.current);
+        drawUtils.drawGrid(view, canvas.current)
+    });
 
     return <canvas ref={canvas} width={width} height={height} style={{height: scale}} id={id} />;
 }

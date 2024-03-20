@@ -10,9 +10,11 @@ import * as input from './input.tsx'
 let session: any = null;
 // canvas config
 let view: {
+    reactRoot: ReactDOM.Root | null,        // react entry point
     boardW: number,                         // width of game board grid
     boardH: number,                         // height of game board grid
 } = {
+    reactRoot: null,
     boardW: 10,
     boardH: 40,
 }
@@ -109,6 +111,10 @@ const resetState = () => {
 
 // get the current piece's grid
 const getPiece = (rot?: number | null): gameUtils.Grid => {
+    // return empty grid if the bag hasn't been initalized
+    if(state.bag.length == 0)
+        return gameUtils.newGrid(0, 0);
+
     return blockStore.idToLetter[state.bag[0]](rot == null ? state.playRot : rot);
 }
 
@@ -254,6 +260,19 @@ const doGravity = () => {
     }
 
     gameUtils.stamp(state.playX, state.playY, state.board, getPiece());
+    runRender();
+}
+
+// every state.gravityTime ms call doGravity
+const gravityLoop = () => {
+    // check that game has been initalized
+    if(!state.gravityTime)
+        return;
+
+    setTimeout(() => {
+        doGravity();
+        gravityLoop();
+    }, state.gravityTime / 2);
 }
 
 // draw the ghost block to show where the piece will land
@@ -278,6 +297,11 @@ const kick = (rot) => {
             state.playX = kickX;
             state.playY = kickY;
             state.playRot = rot;
+
+            clearPlay(false);
+            gameUtils.stamp(state.playX, state.playY, state.board, getPiece());
+            runRender();
+
             return;
         }
     }
@@ -296,8 +320,13 @@ const move = (dx, drot) => {
     if(drot != 0)
         kick(newRot);
 
-    if(!gameUtils.checkBoxColl(newX, state.playY, state.board, getPiece()))
+    if(!gameUtils.checkBoxColl(newX, state.playY, state.board, getPiece())) {
         state.playX = newX;
+
+        clearPlay(false);
+        gameUtils.stamp(state.playX, state.playY, state.board, getPiece());
+        runRender();
+    }
 }
 
 // return min:sec:ms of how long the game has been running
@@ -317,6 +346,46 @@ const formatPlayTime = (time?: number, start?: number): string => {
 const setScore = (score: HTMLSpanElement | null, value: number | string) => {
     if(score)
         score.textContent = value.toString();
+}
+
+// init score objects
+const initScoreboard = () => {
+    scores.usernameScore = document.getElementById('usernameScore');
+    scores.locksScore = document.getElementById('locks');
+    scores.linesScore = document.getElementById('lines');
+    scores.ppsScore = document.getElementById('pps');
+    scores.timeScore = document.getElementById('time');
+
+    setScore(scores.locksScore, state.locks)
+    setScore(scores.linesScore, state.lines);
+    setScore(scores.ppsScore, state.pps);
+    setScore(scores.timeScore, formatPlayTime(0, Date.now()));
+}
+
+// pass boards to react componenet for render
+const runRender = () => {
+    // null check
+    if(!view.reactRoot)
+        return;
+
+    placeGhost();
+
+    // generate hold grid based on if a piece is being held
+    let holdGrid: gameUtils.Grid = gameUtils.newGrid(4, 2);
+    if(state.hold != null)
+        holdGrid = gameUtils.stamp(0, 0, holdGrid, blockStore.idToLetter[state.hold](0));
+    // generate next grid
+    let nextGrid: gameUtils.Grid = gameUtils.newGrid(4, 14);
+    for(let i = 0; i < 5 && state.bag.length > 0; i++)
+        gameUtils.stamp(0, i*3, nextGrid, blockStore.idToLetter[state.bag[1+i]](0));
+
+    view.reactRoot.render(
+        <gameMenu.GameBoards
+            holdGrid={holdGrid}
+            gameGrid={state.board}
+            nextGrid={nextGrid}
+        />
+    );
 }
 
 // event methods, controls and SocketIO events
@@ -345,17 +414,17 @@ export const events = {
         move(0, 1);
     },
     softDrop: (k: input.KeyState) => {
-        const oldTime = state.gravityTime;
+        // null check
+        if(!state.gravityTime)
+            return;
+
+        const oldTime: number = state.gravityTime;
         state.gravityTime = k.down ? settings.softDropGravity : settings.levelGravity;
 
-        // null checks
-        if(!state.gravityTime || !oldTime)
-            return;
-        
         // difference factor between the set gravity and previous gravity
-        const timeCoef = state.gravityTime / oldTime;
+        const timeCoef: number = state.gravityTime / oldTime;
         // scaled time since the last gravity tick
-        const gravityTimeScaled = (Date.now() - state.playLastGravity) * timeCoef;
+        const gravityTimeScaled: number = (Date.now() - state.playLastGravity) * timeCoef;
         // scaled time at the last gravity tick
         state.playLastGravity = Date.now() - gravityTimeScaled;
     },
@@ -386,46 +455,6 @@ export const events = {
     }
 }
 
-// init score objects
-const initScoreboard = () => {
-    scores.usernameScore = document.getElementById('usernameScore');
-    scores.locksScore = document.getElementById('locks');
-    scores.linesScore = document.getElementById('lines');
-    scores.ppsScore = document.getElementById('pps');
-    scores.timeScore = document.getElementById('time');
-
-    setScore(scores.locksScore, state.locks)
-    setScore(scores.linesScore, state.lines);
-    setScore(scores.ppsScore, state.pps);
-    setScore(scores.timeScore, formatPlayTime(0, Date.now()));
-}
-
-// pass boards to react componenet for render
-const runRender = () => {
-    // create react root
-    let gameDiv: HTMLElement | null = document.getElementById('game');
-    if(!gameDiv)
-        return;
-    let reactRoot = ReactDOM.createRoot(gameDiv);
-
-    // generate hold grid based on if a piece is being held
-    let holdGrid: gameUtils.Grid = gameUtils.newGrid(4, 2);
-    if(state.hold != null)
-        holdGrid = gameUtils.stamp(0, 0, holdGrid, blockStore.idToLetter[state.hold](0));
-    // generate next grid
-    let nextGrid: gameUtils.Grid = gameUtils.newGrid(4, 14);
-    for(let i = 0; i < 5 && state.bag.length > 0; i++)
-        gameUtils.stamp(0, i*3, nextGrid, blockStore.idToLetter[state.bag[1+i]](0));
-
-    reactRoot.render(
-        <gameMenu.GameBoards
-            holdGrid={holdGrid}
-            gameGrid={state.board}
-            nextGrid={nextGrid}
-        />
-    );
-}
-
 // init objects
 export const init = (initSession: any) => {
     session = initSession;
@@ -435,15 +464,17 @@ export const init = (initSession: any) => {
         return;
 
     // setup canvases div
-    let gameBoardsDiv = document.createElement('div');
-    gameBoardsDiv.id = 'game';
-    root.appendChild(gameBoardsDiv);
+    let gameDiv = document.createElement('div');
+    gameDiv.id = 'game';
+    root.appendChild(gameDiv);
+    view.reactRoot = ReactDOM.createRoot(gameDiv);
     runRender();
 
     // setup score display
     let scoreBoard = document.createElement('div');
     scoreBoard.id = 'scoreboard';
     root.appendChild(scoreBoard);
+
     // pass scoreboard div to react
     let reactRoot = ReactDOM.createRoot(scoreBoard);
     reactRoot.render(
@@ -476,18 +507,16 @@ export const start = async (startSettings: any) => {
 
     settings = startSettings;
     state.gravityTime = settings.levelGravity;
+
+    gravityLoop();
 }
 
 // run one update cycle
 export const tick = () => {
     // update board if the game hasn't been lost or is paused
     if(!state.loss && !state.paused) {
-        doGravity();
-        placeGhost();
         setScore(scores.timeScore, formatPlayTime());
     }
-
-    runRender();
 }
 
 // change the username stored in the game state
